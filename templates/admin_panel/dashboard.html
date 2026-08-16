@@ -1,0 +1,118 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- STAT CARDS -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">Total Users</div>
+    <div class="stat-value">{{ total_users }}</div>
+    <div class="stat-sub">Registered accounts</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Bookings</div>
+    <div class="stat-value">{{ total_bookings }}</div>
+    <div class="stat-sub">All booking types</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Attractions</div>
+    <div class="stat-value">{{ total_attractions }}</div>
+    <div class="stat-sub">{{ featured_count }} featured</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Upcoming Events</div>
+    <div class="stat-value">{{ upcoming_events }}</div>
+    <div class="stat-sub">Scheduled ahead</div>
+  </div>
+</div>
+
+<!-- RECENT BOOKINGS -->
+<div class="recent-grid">
+
+  <div class="recent-card">
+    <div class="recent-card-header">
+      <div class="recent-card-title">Recent Hotel Bookings</div>
+      <a href="{% url 'admin_hotel_bookings' %}" class="recent-card-link">View all</a>
+    </div>
+    {% for b in recent_hotel_bookings %}
+    <div class="recent-item">
+      <div>
+        <div class="recent-item-name">{{ b.user.username }} — {{ b.room.hotel.name }}</div>
+        <div class="recent-item-sub">{{ b.check_in }} to {{ b.check_out }}</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="recent-item-price">PHP {{ b.total_price }}</div>
+        <span class="badge badge-{{ b.status }}">{{ b.get_status_display }}</span>
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">No hotel bookings yet.</div>
+    {% endfor %}
+  </div>
+
+  <div class="recent-card">
+    <div class="recent-card-header">
+      <div class="recent-card-title">Recent Event Bookings</div>
+      <a href="{% url 'admin_event_bookings' %}" class="recent-card-link">View all</a>
+    </div>
+    {% for b in recent_event_bookings %}
+    <div class="recent-item">
+      <div>
+        <div class="recent-item-name">{{ b.user.username }} — {{ b.event.name }}</div>
+        <div class="recent-item-sub">{{ b.num_tickets }} ticket(s) · {{ b.event.date }}</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="recent-item-price">PHP {{ b.total_price }}</div>
+        <span class="badge badge-{{ b.status }}">{{ b.get_status_display }}</span>
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">No event bookings yet.</div>
+    {% endfor %}
+  </div>
+
+  <div class="recent-card">
+    <div class="recent-card-header">
+      <div class="recent-card-title">Recent Service Bookings</div>
+      <a href="{% url 'admin_service_bookings' %}" class="recent-card-link">View all</a>
+    </div>
+    {% for b in recent_service_bookings %}
+    <div class="recent-item">
+      <div>
+        <div class="recent-item-name">{{ b.user.username }} — {{ b.service.name }}</div>
+        <div class="recent-item-sub">{{ b.num_guests }} guest(s) · {{ b.visit_date }}</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="recent-item-price">PHP {{ b.total_price }}</div>
+        <span class="badge badge-{{ b.status }}">{{ b.get_status_display }}</span>
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">No service bookings yet.</div>
+    {% endfor %}
+  </div>
+
+  <div class="recent-card">
+    <div class="recent-card-header">
+      <div class="recent-card-title">Recent Users</div>
+      <a href="{% url 'admin_users' %}" class="recent-card-link">View all</a>
+    </div>
+    {% for u in recent_users %}
+    <div class="recent-item">
+      <div>
+        <div class="recent-item-name">{{ u.username }}</div>
+        <div class="recent-item-sub">{{ u.email }} · Joined {{ u.date_joined|date:"M j, Y" }}</div>
+      </div>
+      {% if u.is_staff %}<span class="badge badge-confirmed">Staff</span>{% endif %}
+    </div>
+    {% empty %}
+    <div class="empty-state">No users yet.</div>
+    {% endfor %}
+  </div>
+
+</div>
+
+{% endblock %}

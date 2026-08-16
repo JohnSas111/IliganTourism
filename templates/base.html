@@ -1,0 +1,124 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Iligan Tourism{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- MOBILE SIDEBAR DRAWER -->
+<div class="nav-drawer" id="navDrawer">
+  <div class="nav-drawer-header">
+    <span class="nav-drawer-logo">Iligan <em>Tourism</em></span>
+  </div>
+  <ul class="nav-drawer-links">
+    <li><a href="{% url 'home' %}">Home</a></li>
+    <li><a href="{% url 'attractions' %}">Attractions</a></li>
+    <li><a href="{% url 'hotels' %}">Hotels</a></li>
+    <li><a href="{% url 'events' %}">Events</a></li>
+    <li><a href="{% url 'contact' %}">Contact</a></li>
+  </ul>
+</div>
+<!-- Overlay behind drawer -->
+<div class="nav-drawer-overlay" id="navOverlay"></div>
+
+<nav id="mainNav">
+  <div class="nav-left">
+    <!-- Burger on the far left (mobile only) -->
+    <button class="nav-burger" id="navBurger" aria-label="Toggle menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <!-- Logo slides right when drawer opens -->
+    <a href="{% url 'home' %}" class="nav-logo">
+      <span>Iligan <span class="nav-logo-text">Tourism</span></span>
+    </a>
+  </div>
+
+  <!-- Desktop nav links (hidden on mobile) -->
+  <ul class="nav-links">
+    <li><a href="{% url 'home' %}">Home</a></li>
+    <li><a href="{% url 'attractions' %}">Attractions</a></li>
+    <li><a href="{% url 'hotels' %}">Hotels</a></li>
+    <li><a href="{% url 'events' %}">Events</a></li>
+    <li><a href="{% url 'contact' %}">Contact</a></li>
+  </ul>
+
+  <!-- Actions always visible -->
+  <div class="nav-actions">
+    {% if user.is_authenticated %}
+      <a href="{% url 'my_bookings' %}" class="btn-ghost">My Bookings</a>
+      <form method="post" action="{% url 'logout' %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn-gold">Logout</button>
+      </form>
+    {% else %}
+      <a href="{% url 'login' %}" class="btn-ghost">Sign In</a>
+      <a href="{% url 'register' %}" class="btn-gold">Register</a>
+    {% endif %}
+  </div>
+</nav>
+
+{% if messages %}
+<div class="messages-container">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% block content %}{% endblock %}
+
+<footer>
+  <div class="footer-inner">
+    <span class="footer-logo">Iligan Tourism System</span>
+    <div class="footer-links">
+      <a href="{% url 'attractions' %}">Attractions</a>
+      <a href="{% url 'hotels' %}">Hotels</a>
+      <a href="{% url 'events' %}">Events</a>
+      <a href="{% url 'contact' %}">Contact</a>
+    </div>
+    <p class="footer-copy">&copy; 2025 Iligan Local Tourism Guide · City of Majestic Waterfalls, Lanao del Norte</p>
+  </div>
+</footer>
+
+<script>
+  const burger  = document.getElementById('navBurger');
+  const drawer  = document.getElementById('navDrawer');
+  const overlay = document.getElementById('navOverlay');
+  const nav     = document.getElementById('mainNav');
+  const logo    = nav.querySelector('.nav-logo');
+
+  function openDrawer() {
+    drawer.classList.add('open');
+    overlay.classList.add('open');
+    nav.classList.add('drawer-open');
+    burger.classList.add('open');
+  }
+
+  function closeDrawer() {
+    drawer.classList.remove('open');
+    overlay.classList.remove('open');
+    nav.classList.remove('drawer-open');
+    burger.classList.remove('open');
+  }
+
+  burger.addEventListener('click', function() {
+    drawer.classList.contains('open') ? closeDrawer() : openDrawer();
+  });
+
+  overlay.addEventListener('click', closeDrawer);
+
+  drawer.querySelectorAll('a').forEach(function(link) {
+    link.addEventListener('click', closeDrawer);
+  });
+</script>
+
+</body>
+</html>

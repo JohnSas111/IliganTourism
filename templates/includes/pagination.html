@@ -1,0 +1,26 @@
+{% if page_obj.has_other_pages %}
+<nav class="pagination-nav" aria-label="Pagination">
+  <div class="pagination-info">
+    Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} results
+  </div>
+  <ul class="pagination-list">
+    {% if page_obj.has_previous %}
+      <li><a class="page-btn" href="?{% if search %}q={{ search }}&{% endif %}{{ page_param }}=1">«</a></li>
+      <li><a class="page-btn" href="?{% if search %}q={{ search }}&{% endif %}{{ page_param }}={{ page_obj.previous_page_number }}">‹</a></li>
+    {% endif %}
+
+    {% for num in page_obj.paginator.page_range %}
+      {% if page_obj.number == num %}
+        <li><span class="page-btn page-btn--active">{{ num }}</span></li>
+      {% elif num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+        <li><a class="page-btn" href="?{% if search %}q={{ search }}&{% endif %}{{ page_param }}={{ num }}">{{ num }}</a></li>
+      {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+      <li><a class="page-btn" href="?{% if search %}q={{ search }}&{% endif %}{{ page_param }}={{ page_obj.next_page_number }}">›</a></li>
+      <li><a class="page-btn" href="?{% if search %}q={{ search }}&{% endif %}{{ page_param }}={{ page_obj.paginator.num_pages }}">»</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}

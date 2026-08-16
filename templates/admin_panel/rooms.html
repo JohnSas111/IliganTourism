@@ -1,0 +1,47 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}Rooms{% endblock %}
+{% block page_title %}Hotel Rooms{% endblock %}
+{% block content %}
+
+<div class="section-header">
+  <div class="section-title">Hotel <em>Rooms</em></div>
+  <a href="{% url 'admin_room_add' %}" class="btn-primary">+ Add Room</a>
+</div>
+
+<div class="admin-table-wrap">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Hotel</th>
+        <th>Room No.</th>
+        <th>Type</th>
+        <th>Price / Night</th>
+        <th>Max Guests</th>
+        <th>Available</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for room in rooms %}
+      <tr>
+        <td>{{ room.hotel.name }}</td>
+        <td>{{ room.room_number }}</td>
+        <td>{{ room.get_room_type_display }}</td>
+        <td>PHP {{ room.price }}</td>
+        <td>{{ room.max_guests }}</td>
+        <td>{% if room.is_available %}<span class="badge badge-active">Yes</span>{% else %}<span class="badge badge-inactive">No</span>{% endif %}</td>
+        <td>
+          <div class="td-actions">
+            <a href="{% url 'admin_room_edit' room.pk %}" class="btn-edit">Edit</a>
+            <a href="{% url 'admin_room_delete' room.pk %}" class="btn-danger">Delete</a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="empty-state">No rooms yet. Add one above.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

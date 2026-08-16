@@ -1,0 +1,181 @@
+/* ============================================================
+   hotel_detail.css
+   Styles specific to hotel_detail.html
+   ============================================================ */
+
+/* ── Hotel description ── */
+.hotel-description {
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.8;
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+}
+
+/* ── Rooms section ── */
+.rooms-section {
+    margin-top: 2.5rem;
+}
+
+/* ── Individual room card ── */
+.room-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    transition: border-color 0.25s;
+}
+
+.room-card:hover {
+    border-color: rgba(200, 168, 75, 0.3);
+}
+
+/* ── Room info (left side) ── */
+.room-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.room-info h4 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+}
+
+.room-info p {
+    font-size: 0.84rem;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.5;
+}
+
+.room-capacity-text {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 0.3rem;
+}
+
+/* ── Room price (right side) ── */
+.room-price-col {
+    text-align: right;
+    flex-shrink: 0;
+    white-space: nowrap;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.room-price {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--gold);
+    display: block;
+    line-height: 1;
+}
+
+/* ── Per night text (matches class in HTML) ── */
+.room-per,
+.room-price-per {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.35);
+    display: block;
+    margin-bottom: 0.6rem;
+}
+
+/* ── No rooms available message ── */
+.no-rooms-msg {
+    color: rgba(255, 255, 255, 0.3);
+    padding: 1.5rem 0;
+    font-size: 0.9rem;
+}
+
+/* ── Review section heading ── */
+.review-section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.35rem;
+    margin-bottom: 1.25rem;
+}
+
+.review-section-title em {
+    font-style: italic;
+    color: var(--gold);
+}
+
+/* ── No reviews message ── */
+.no-reviews-msg {
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 0.85rem;
+}
+
+/* ── Back link ── */
+.back-link {
+    color: rgba(255, 255, 255, 0.45);
+    text-decoration: none;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: color 0.2s;
+}
+
+.back-link::before {
+    content: '←';
+}
+
+.back-link:hover {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* ── Booked room state ── */
+.room-card.room-booked {
+    border-color: rgba(224, 92, 92, 0.2);
+    background: rgba(224, 92, 92, 0.03);
+}
+
+/* ── Booked badge ── */
+.badge-red {
+    background: rgba(224, 92, 92, 0.15);
+    color: rgba(224, 92, 92, 0.9);
+    border: 1px solid rgba(224, 92, 92, 0.3);
+    padding: 0.2rem 0.6rem;
+    border-radius: 50px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+}
+
+/* ── Unavailable button ── */
+.btn-sm-unavailable {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.45rem 1.1rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: not-allowed;
+}
+
+/* ── Booked date ranges ── */
+.booked-dates {
+    margin-top: 0.4rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.booked-range {
+    font-size: 0.72rem;
+    background: rgba(224, 92, 92, 0.1);
+    color: rgba(224, 92, 92, 0.75);
+    border: 1px solid rgba(224, 92, 92, 0.2);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+}

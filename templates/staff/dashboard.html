@@ -1,0 +1,120 @@
+{% extends 'staff/base.html' %}
+{% block title %}Staff Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">Today's Bookings</div>
+    <div class="stat-value">{{ today_count }}</div>
+    <div class="stat-sub">Arriving today</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Confirmed</div>
+    <div class="stat-value">{{ confirmed_count }}</div>
+    <div class="stat-sub">Ready to serve</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Completed</div>
+    <div class="stat-value">{{ completed_count }}</div>
+    <div class="stat-sub">Done</div>
+  </div>
+</div>
+
+<div class="section-header" style="margin-top:1.5rem;">
+  <div class="section-title">Today's <em>Bookings</em></div>
+  <a href="{% url 'staff_bookings' %}" class="btn-secondary">View All</a>
+</div>
+
+<div class="admin-table-wrap">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Customer</th>
+        <th>Details</th>
+        <th>Amount</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in today_bookings %}
+      <tr>
+        <td>{{ b.user.username }}</td>
+        <td>{{ b.detail }}</td>
+        <td>PHP {{ b.total_price }}</td>
+        <td><span class="badge badge-{{ b.status }}">{{ b.get_status_display }}</span></td>
+        <td>
+          <div class="td-actions">
+            {% if b.status == 'confirmed' %}
+            <form method="post" action="{% url 'staff_complete_booking' b.booking_type b.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn-primary" style="padding:0.35rem 0.9rem;font-size:0.8rem;">Mark Completed</button>
+            </form>
+            {% endif %}
+            <button class="btn-secondary" style="font-size:0.78rem;padding:0.35rem 0.85rem;"
+              data-username="{{ b.user.username }}"
+              data-fullname="{{ b.user.get_full_name|default:b.user.username }}"
+              data-email="{{ b.user.email }}"
+              data-detail="{{ b.detail }}"
+              data-date="{{ b.date }}"
+              data-total="PHP {{ b.total_price }}"
+              data-status="{{ b.get_status_display }}"
+              data-booked="{{ b.created_at|date:'M j, Y' }}"
+              onclick="openModal(this)">
+              View Details
+            </button>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="empty-state">No bookings today.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="bookingModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Booking <em>Details</em></div>
+      <button class="modal-close" onclick="document.getElementById('bookingModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-label">Customer</div>
+        <div class="info-row"><span>Username</span><span id="m-username"></span></div>
+        <div class="info-row"><span>Full Name</span><span id="m-fullname"></span></div>
+        <div class="info-row"><span>Email</span><span id="m-email"></span></div>
+        <div class="info-row"><span>Booked On</span><span id="m-booked"></span></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Booking Details</div>
+        <div class="info-row"><span>Details</span><span id="m-detail"></span></div>
+        <div class="info-row"><span>Date</span><span id="m-date"></span></div>
+        <div class="info-row"><span>Total</span><strong id="m-total"></strong></div>
+        <div class="info-row"><span>Status</span><span id="m-status"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openModal(btn) {
+  document.getElementById('m-username').textContent = btn.dataset.username;
+  document.getElementById('m-fullname').textContent = btn.dataset.fullname;
+  document.getElementById('m-email').textContent    = btn.dataset.email;
+  document.getElementById('m-booked').textContent   = btn.dataset.booked;
+  document.getElementById('m-detail').textContent   = btn.dataset.detail;
+  document.getElementById('m-date').textContent     = btn.dataset.date;
+  document.getElementById('m-total').textContent    = btn.dataset.total;
+  document.getElementById('m-status').textContent   = btn.dataset.status;
+  document.getElementById('bookingModal').classList.add('open');
+}
+document.getElementById('bookingModal').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+});
+</script>
+
+{% endblock %}

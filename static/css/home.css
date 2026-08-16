@@ -1,0 +1,424 @@
+/* ============================================================
+   home.css - Styles for home.html
+   ============================================================ */
+
+/* Hero section */
+.hero {
+    min-height: 100vh;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.hero-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-color: #0e2a1e;
+}
+
+.hero-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 80% 60% at 50% 100%, rgba(27, 107, 138, 0.45) 0%, transparent 70%),
+        linear-gradient(170deg, rgba(10, 31, 21, 0.85) 0%, rgba(14, 42, 30, 0.7) 40%, rgba(15, 37, 53, 0.8) 100%);
+}
+
+/* Waterfall stream animations */
+.stream {
+    position: absolute;
+    top: -10%;
+    width: 2px;
+    background: linear-gradient(to bottom, transparent, rgba(42, 155, 181, 0.45) 30%, rgba(27, 107, 138, 0.25) 70%, transparent);
+    border-radius: 2px;
+    animation: fall linear infinite;
+}
+
+.stream:nth-child(1) { left: 12%; height: 70%; animation-duration: 4s; }
+.stream:nth-child(2) { left: 22%; height: 55%; animation-duration: 5.5s; animation-delay: 1s; opacity: 0.5; width: 1.5px; }
+.stream:nth-child(3) { left: 38%; height: 80%; animation-duration: 3.5s; animation-delay: 0.5s; width: 3px; opacity: 0.35; }
+.stream:nth-child(4) { left: 55%; height: 70%; animation-duration: 4.5s; animation-delay: 0.3s; }
+.stream:nth-child(5) { left: 70%; height: 60%; animation-duration: 6s; animation-delay: 2s; opacity: 0.5; }
+.stream:nth-child(6) { left: 85%; height: 75%; animation-duration: 4s; animation-delay: 1.5s; width: 1.5px; }
+
+@keyframes fall {
+    0%   { transform: translateY(-5%);   opacity: 0; }
+    15%  { opacity: 1; }
+    85%  { opacity: 0.8; }
+    100% { transform: translateY(110vh); opacity: 0; }
+}
+
+/* Mist effect */
+.mist {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 30%;
+    background: linear-gradient(to top, rgba(42, 155, 181, 0.1), transparent);
+    animation: mistFloat 6s ease-in-out infinite alternate;
+}
+
+@keyframes mistFloat {
+    from { transform: translateY(0);     opacity: 0.6; }
+    to   { transform: translateY(-15px); opacity: 1; }
+}
+
+/* Hero content */
+.hero-content {
+    position: relative;
+    text-align: center;
+    max-width: 780px;
+    padding: 2rem;
+    animation: reveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+    z-index: 1;
+}
+
+@keyframes reveal {
+    from { opacity: 0; transform: translateY(40px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(200, 168, 75, 0.15);
+    border: 1px solid rgba(200, 168, 75, 0.35);
+    color: var(--gold);
+    padding: 0.4rem 1.1rem;
+    border-radius: 50px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 1.75rem;
+}
+
+.hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(3rem, 7vw, 5.5rem);
+    font-weight: 300;
+    line-height: 1.1;
+    margin-bottom: 0.25rem;
+}
+
+.hero h1 em {
+    font-style: italic;
+    color: var(--gold);
+    font-weight: 400;
+}
+
+.hero h1 strong {
+    font-weight: 700;
+    display: block;
+    font-size: 1.1em;
+}
+
+.hero-sub {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.75;
+    max-width: 500px;
+    margin: 1.5rem auto 2.5rem;
+    font-weight: 300;
+}
+
+.hero-cta {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-hero-primary {
+    background: var(--gold);
+    color: var(--forest);
+    border: none;
+    padding: 0.9rem 2.25rem;
+    border-radius: 50px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-hero-primary:hover {
+    background: #dbb85c;
+    transform: translateY(-2px);
+}
+
+.btn-hero-outline {
+    background: transparent;
+    color: var(--white);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    padding: 0.9rem 2.25rem;
+    border-radius: 50px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-hero-outline:hover {
+    border-color: var(--white);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Hotels strip */
+.hotels-wrap {
+    background: rgba(0, 0, 0, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.hotels-inner {
+    padding: 4rem 3rem;
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+/* Hotel card */
+.hotel-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s;
+    color: inherit;
+    text-decoration: none;
+}
+
+.hotel-card:hover {
+    border-color: rgba(200, 168, 75, 0.3);
+    transform: translateY(-4px);
+}
+
+.hotel-img-box {
+    width: 100%;
+    height: 180px;
+    background: linear-gradient(135deg, rgba(45, 110, 78, 0.3), rgba(27, 107, 138, 0.3));
+    overflow: hidden;
+}
+
+.hotel-img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.hotel-body {
+    padding: 1.5rem;
+}
+
+.hotel-stars {
+    color: var(--gold);
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    margin-bottom: 0.4rem;
+}
+
+.hotel-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+}
+
+.hotel-addr {
+    font-size: 0.84rem;
+    color: rgba(255, 255, 255, 0.48);
+    margin-bottom: 0.4rem;
+}
+
+.hotel-price {
+    font-size: 0.88rem;
+    color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.btn-book {
+    display: inline-block;
+    background: var(--gold);
+    color: var(--forest);
+    padding: 0.5rem 1.25rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-book:hover {
+    background: #dbb85c;
+}
+
+/* Event card */
+.event-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s;
+    color: inherit;
+    text-decoration: none;
+}
+
+.event-card:hover {
+    border-color: rgba(200, 168, 75, 0.3);
+    transform: translateY(-4px);
+}
+
+.event-img-box {
+    width: 100%;
+    height: 180px;
+    background: linear-gradient(135deg, rgba(45, 110, 78, 0.3), rgba(27, 107, 138, 0.3));
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.event-img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.event-body {
+    padding: 1.5rem;
+}
+
+.event-date {
+    font-size: 0.78rem;
+    color: var(--sky);
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+}
+
+.event-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.event-loc {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 0.75rem;
+}
+
+/* CTA banner */
+.cta-wrap {
+    padding: 0 3rem 5rem;
+}
+
+.cta-banner {
+    max-width: 1280px;
+    margin: 0 auto;
+    background: linear-gradient(135deg, rgba(45, 110, 78, 0.2), rgba(27, 107, 138, 0.2));
+    border: 1px solid rgba(200, 168, 75, 0.2);
+    border-radius: 24px;
+    padding: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.cta-banner h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    font-weight: 400;
+}
+
+.cta-banner p {
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 0.5rem;
+}
+
+.cta-btns {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* View all row */
+.view-all-row {
+    text-align: center;
+    margin-top: 2.5rem;
+}
+
+/* No results empty state */
+.no-results {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.3);
+    padding: 3rem;
+    font-size: 0.9rem;
+}
+
+/* ── Home page responsive ── */
+@media (max-width: 900px) {
+    .hotels-inner {
+        padding: 3rem 1.5rem;
+    }
+    .cta-banner {
+        flex-direction: column;
+        text-align: center;
+        padding: 2.5rem 1.5rem;
+    }
+    .cta-btns {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-content {
+        padding: 1.5rem;
+    }
+    .eyebrow {
+        font-size: 0.65rem;
+    }
+    .features-strip {
+        gap: 1.25rem;
+        padding: 1.75rem 1.25rem;
+        justify-content: flex-start;
+    }
+    .feat {
+        font-size: 0.82rem;
+    }
+    .hotels-inner {
+        padding: 2.5rem 1.25rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .hero-stats {
+        gap: 1rem;
+    }
+    .stat-num {
+        font-size: 1.7rem;
+    }
+    .hotel-card,
+    .event-card {
+        color: inherit;
+        text-decoration: none;
+    }
+}

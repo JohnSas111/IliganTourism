@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment Successful — Iligan Tourism{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/payment.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="payment-result-card">
+
+    {% if paid %}
+    <div class="payment-icon payment-icon-success">&#10003;</div>
+    <h1 class="payment-title">Payment <em>Successful!</em></h1>
+    <p class="payment-sub">Your booking has been confirmed. Thank you for choosing Iligan Tourism.</p>
+
+    <div class="payment-summary">
+      <div class="info-row">
+        <span>Amount Paid</span>
+        <strong>PHP {{ payment.amount }}</strong>
+      </div>
+      <div class="info-row">
+        <span>Booking Type</span>
+        <span>{{ payment.get_booking_type_display }}</span>
+      </div>
+      <div class="info-row">
+        <span>Status</span>
+        <span class="badge badge-confirmed">Confirmed</span>
+      </div>
+    </div>
+
+    <div class="payment-actions">
+      <a href="{% url 'my_bookings' %}" class="btn-gold" style="display:inline-block;padding:0.85rem 2rem;border-radius:50px;text-decoration:none;font-weight:600;">View My Bookings</a>
+      <a href="{% url 'home' %}" class="btn-ghost" style="display:inline-block;padding:0.85rem 2rem;border-radius:50px;text-decoration:none;">Back to Home</a>
+    </div>
+
+    {% else %}
+    <div class="payment-icon payment-icon-pending">&#8987;</div>
+    <h1 class="payment-title">Payment <em>Pending</em></h1>
+    <p class="payment-sub">We are waiting to confirm your payment. Please check back shortly.</p>
+    <div class="payment-actions">
+      <a href="{% url 'my_bookings' %}" class="btn-gold" style="display:inline-block;padding:0.85rem 2rem;border-radius:50px;text-decoration:none;font-weight:600;">View My Bookings</a>
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — Iligan Tourism</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-card">
+    <a href="{% url 'home' %}" class="auth-logo">Iligan <span>Tourism</span></a>
+    <div class="auth-title">Create Account</div>
+    <div class="auth-sub">Join to start booking</div>
+
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="form-group">
+        <label>{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}
+        <div class="form-errors">{% for e in field.errors %}{{ e }}{% endfor %}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+      <button type="submit" class="btn-gold btn-full">Create Account</button>
+      <a href="{% url 'home' %}" class="btn-cancel">Cancel</a>
+    </form>
+
+    <div class="auth-footer">
+      Already have an account? <a href="{% url 'login' %}">Sign in</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

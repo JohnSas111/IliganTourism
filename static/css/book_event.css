@@ -1,0 +1,25 @@
+/* ============================================================
+   book_event.css
+   Styles specific to book_event.html
+   ============================================================ */
+
+/* ── Page wrapper ── */
+.book-event-wrap {
+    max-width: 600px;
+}
+
+/* ── Back link ── */
+.back-link-row {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.back-link {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.85rem;
+    text-decoration: none;
+}
+
+.back-link:hover {
+    color: var(--gold);
+}

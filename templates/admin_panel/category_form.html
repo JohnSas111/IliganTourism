@@ -1,0 +1,22 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}{% if category %}Edit{% else %}Add{% endif %} Category{% endblock %}
+{% block page_title %}{% if category %}Edit{% else %}Add{% endif %} Category{% endblock %}
+{% block content %}
+
+<div class="admin-form-wrap">
+  <div class="admin-form-card">
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Category Name</label>
+        <input type="text" name="name" value="{{ category.name|default:'' }}" required placeholder="e.g. Waterfalls, Swimming Spots, Churches">
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">{% if category %}Save Changes{% else %}Add Category{% endif %}</button>
+        <a href="{% url 'admin_categories' %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

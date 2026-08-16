@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Iligan Tourism System — City of Majestic Waterfalls{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+<style>
+  .hero-bg { background-image: url("{% static 'images/bg.png' %}"); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="stream"></div>
+  <div class="stream"></div>
+  <div class="stream"></div>
+  <div class="stream"></div>
+  <div class="stream"></div>
+  <div class="stream"></div>
+  <div class="mist"></div>
+  <div class="hero-content">
+    <div class="eyebrow">Lanao del Norte, Philippines</div>
+    <h1>Discover <em>Iligan</em><strong>City of Majestic Waterfalls</strong></h1>
+    <p class="hero-sub">Home to over 23 stunning waterfalls, pristine springs, and rich cultural heritage in the heart of Mindanao.</p>
+    <div class="hero-cta">
+      {% if user.is_authenticated %}
+        <a href="{% url 'attractions' %}" class="btn-hero-primary">Explore Attractions</a>
+        <a href="{% url 'hotels' %}" class="btn-hero-outline">Book a Hotel</a>
+      {% else %}
+        <a href="{% url 'register' %}" class="btn-hero-primary">Get Started Free</a>
+        <a href="{% url 'login' %}" class="btn-hero-outline">Log In</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- FEATURED ATTRACTIONS (admin sets is_featured=True in admin panel) -->
+<section class="section" id="attractions">
+  <div class="sec-tag">Top Destinations</div>
+  <h2 class="sec-title">Featured <em>Attractions</em></h2>
+  <p class="sec-desc">Discover Iligan's most breathtaking natural and cultural destinations.</p>
+  <div class="grid-3">
+    {% for attraction in featured_attractions %}
+    <a href="{% url 'attraction_detail' attraction.pk %}" class="card">
+      <div class="card-img-box">
+        {% if attraction.image %}
+        <img src="{{ attraction.image.url }}" alt="{{ attraction.name }}">
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <div class="card-cat">{% if attraction.category %}{{ attraction.category.name }}{% endif %}</div>
+        <div class="card-name">{{ attraction.name }}</div>
+        <p class="card-desc">{{ attraction.description|truncatewords:18 }}</p>
+        <div class="card-bottom-row">
+          {% if attraction.entrance_fee > 0 %}
+          <span class="card-fee">PHP {{ attraction.entrance_fee }}</span>
+          {% else %}
+          <span class="card-fee">Free Entry</span>
+          {% endif %}
+          <span class="btn-sm btn-sm-gold">View Details</span>
+        </div>
+      </div>
+    </a>
+    {% empty %}
+    <div class="no-results">No featured attractions yet. Mark attractions as featured in the admin panel.</div>
+    {% endfor %}
+  </div>
+  <div class="view-all-row">
+    <a href="{% url 'attractions' %}" class="btn-hero-outline">View All Attractions</a>
+  </div>
+</section>
+
+<!-- HOTELS (pulled from admin-added hotels) -->
+<div class="hotels-wrap" id="hotels">
+  <div class="hotels-inner">
+    <div class="sec-tag">Where to Stay</div>
+    <h2 class="sec-title">Book Your <em>Hotel</em></h2>
+    <p class="sec-desc">Comfortable stays for every budget in Iligan City.</p>
+    <div class="grid-3">
+      {% for hotel in hotels %}
+      <a href="{% url 'hotel_detail' hotel.pk %}" class="hotel-card">
+        <div class="hotel-img-box">
+          {% if hotel.image %}
+          <img src="{{ hotel.image.url }}" alt="{{ hotel.name }}">
+          {% endif %}
+        </div>
+        <div class="hotel-body">
+          <div class="hotel-stars">
+            {% for i in "12345" %}{% if forloop.counter <= hotel.stars %}★{% else %}☆{% endif %}{% endfor %}
+          </div>
+          <div class="hotel-name">{{ hotel.name }}</div>
+          <div class="hotel-addr">{{ hotel.address }}</div>
+          {% with hotel.rooms.first as first_room %}
+          {% if first_room %}
+          <div class="hotel-price">From PHP {{ first_room.price }} / night</div>
+          {% endif %}
+          {% endwith %}
+          <span class="btn-book">View Rooms</span>
+        </div>
+      </a>
+      {% empty %}
+      <div class="no-results">No hotels yet. Add hotels via the admin panel.</div>
+      {% endfor %}
+    </div>
+    <div class="view-all-row">
+      <a href="{% url 'hotels' %}" class="btn-hero-outline">View All Hotels</a>
+    </div>
+  </div>
+</div>
+
+<!-- UPCOMING EVENTS (pulled from admin-added events) -->
+<section class="section" id="events">
+  <div class="sec-tag">What's On</div>
+  <h2 class="sec-title">Upcoming <em>Events</em></h2>
+  <p class="sec-desc">Experience the vibrant culture and festivals of Iligan City.</p>
+  <div class="grid-3">
+    {% for event in upcoming_events %}
+    <a href="{% url 'event_detail' event.pk %}" class="event-card">
+      <div class="event-img-box">
+        {% if event.image %}
+        <img src="{{ event.image.url }}" alt="{{ event.name }}">
+        {% endif %}
+      </div>
+      <div class="event-body">
+        <div class="event-date">{{ event.date|date:"F j, Y" }}</div>
+        <div class="event-title">{{ event.name }}</div>
+        <p class="card-desc">{{ event.description|truncatewords:15 }}</p>
+        <div class="event-loc">{{ event.location }}</div>
+      </div>
+    </a>
+    {% empty %}
+    <div class="no-results">No upcoming events yet. Add events via the admin panel.</div>
+    {% endfor %}
+  </div>
+  <div class="view-all-row">
+    <a href="{% url 'events' %}" class="btn-hero-outline">View All Events</a>
+  </div>
+</section>
+
+<!-- CTA BANNER (only shown to guests) -->
+{% if not user.is_authenticated %}
+<div class="cta-wrap">
+  <div class="cta-banner">
+    <div>
+      <h2>Ready to Experience Iligan?</h2>
+      <p>Create a free account to book hotels and explore all attractions.</p>
+    </div>
+    <div class="cta-btns">
+      <a href="{% url 'login' %}" class="btn-hero-outline">Log In</a>
+      <a href="{% url 'register' %}" class="btn-hero-primary">Create Free Account</a>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

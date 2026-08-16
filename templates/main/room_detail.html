@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Room {{ room.room_number }} — {{ room.hotel.name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/hotel_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="detail-hero">
+  {% if room.image %}
+  <img src="{{ room.image.url }}" alt="Room {{ room.room_number }}">
+  {% elif room.hotel.image %}
+  <img src="{{ room.hotel.image.url }}" alt="{{ room.hotel.name }}">
+  {% endif %}
+  <div class="detail-hero-overlay"></div>
+  <div class="detail-hero-content">
+    <div class="sec-tag">{{ room.hotel.name }}</div>
+    <h1>Room {{ room.room_number }} — <em>{{ room.get_room_type_display }}</em></h1>
+    <div class="meta">
+      <span class="badge badge-green">Available</span>
+      <span>Up to {{ room.max_guests }} guest(s)</span>
+    </div>
+  </div>
+</div>
+
+<div class="detail-body">
+
+  <div class="detail-main">
+    <h2 class="sec-title">Room <em>Details</em></h2>
+
+    {% if room.description %}
+    <p class="hotel-desc">{{ room.description }}</p>
+    {% endif %}
+
+    <div class="info-box">
+      <div class="info-row">
+        <span>Hotel</span>
+        <span>{{ room.hotel.name }}</span>
+      </div>
+      <div class="info-row">
+        <span>Room Number</span>
+        <span>{{ room.room_number }}</span>
+      </div>
+      <div class="info-row">
+        <span>Room Type</span>
+        <span>{{ room.get_room_type_display }}</span>
+      </div>
+      <div class="info-row">
+        <span>Max Guests</span>
+        <span>{{ room.max_guests }} person(s)</span>
+      </div>
+      <div class="info-row">
+        <span>Price</span>
+        <strong>PHP {{ room.price }} per night</strong>
+      </div>
+      <div class="info-row">
+        <span>Status</span>
+        <span class="badge badge-green">Available</span>
+      </div>
+    </div>
+
+    <div class="back-link-row" style="margin-top:1.5rem;">
+      <a href="{% url 'hotel_detail' room.hotel.pk %}" class="back-link">Back to {{ room.hotel.name }}</a>
+    </div>
+  </div>
+
+  <div class="detail-sidebar">
+    <div class="info-box">
+      <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;margin-bottom:0.5rem;">
+        PHP <em style="color:var(--gold);">{{ room.price }}</em>
+      </h3>
+      <p style="color:rgba(255,255,255,0.4);font-size:0.82rem;margin-bottom:1.5rem;">per night</p>
+
+      {% if user.is_authenticated %}
+      <a href="{% url 'book_room' room.pk %}" class="btn-gold" style="display:block;text-align:center;padding:0.85rem;border-radius:50px;font-size:0.92rem;font-weight:600;text-decoration:none;">Book This Room</a>
+      {% else %}
+      <a href="{% url 'login' %}" class="btn-ghost" style="display:block;text-align:center;padding:0.85rem;border-radius:50px;font-size:0.9rem;text-decoration:none;">Login to Book</a>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

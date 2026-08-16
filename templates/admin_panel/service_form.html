@@ -1,0 +1,78 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}{% if service %}Edit{% else %}Add{% endif %} Service{% endblock %}
+{% block page_title %}{% if service %}Edit{% else %}Add{% endif %} Attraction Service{% endblock %}
+{% block content %}
+
+<div class="admin-form-wrap">
+  <div class="admin-form-card">
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-grid-2">
+
+        <div class="form-group span-2">
+          <label>Attraction</label>
+          <select name="attraction" required>
+            <option value="">— Select Attraction —</option>
+            {% for a in attractions %}
+            <option value="{{ a.pk }}" {% if service.attraction_id == a.pk %}selected{% endif %}>{{ a.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group span-2">
+          <label>Service Name</label>
+          <input type="text" name="name" value="{{ service.name|default:'' }}" required placeholder="e.g. Life Jacket Rental, Guide Service">
+        </div>
+
+        <div class="form-group span-2">
+          <label>Description</label>
+          <textarea name="description" rows="3" placeholder="Describe the service...">{{ service.description|default:'' }}</textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Service Type</label>
+          <select name="service_type">
+            <option value="activity"      {% if service.service_type == 'activity' %}selected{% endif %}>Activity</option>
+            <option value="rental"        {% if service.service_type == 'rental' %}selected{% endif %}>Rental</option>
+            <option value="guide_service" {% if service.service_type == 'guide_service' %}selected{% endif %}>Guide Service</option>
+            <option value="required_item" {% if service.service_type == 'required_item' %}selected{% endif %}>Required Item</option>
+            <option value="food_dining"   {% if service.service_type == 'food_dining' %}selected{% endif %}>Food & Dining</option>
+            <option value="accommodation" {% if service.service_type == 'accommodation' %}selected{% endif %}>Accommodation</option>
+            <option value="day_package"   {% if service.service_type == 'day_package' %}selected{% endif %}>Day Package</option>
+            <option value="group_package" {% if service.service_type == 'group_package' %}selected{% endif %}>Group Package</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Price (PHP)</label>
+          <input type="number" name="price" value="{{ service.price|default:'0' }}" step="0.01" min="0" required>
+        </div>
+
+        <div class="form-group">
+          <label>Capacity (max persons per booking)</label>
+          <input type="number" name="capacity" value="{{ service.capacity|default:'1' }}" min="1" required>
+        </div>
+
+        <div class="form-group">
+          <label>Duration</label>
+          <input type="text" name="duration" value="{{ service.duration|default:'' }}" placeholder="e.g. 1 hour, All day, Overnight">
+        </div>
+
+        <div class="form-group span-2">
+          <label>Options</label>
+          <label class="form-check">
+            <input type="checkbox" name="is_available" {% if service.is_available or not service %}checked{% endif %}>
+            Available for booking
+          </label>
+        </div>
+
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">{% if service %}Save Changes{% else %}Add Service{% endif %}</button>
+        <a href="{% url 'admin_services' %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

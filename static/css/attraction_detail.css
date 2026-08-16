@@ -1,0 +1,185 @@
+/* ============================================================
+   attraction_detail.css
+   Styles specific to attraction_detail.html
+   ============================================================ */
+
+/* ── Services section wrapper ── */
+.services-section {
+    margin-top: 2.5rem;
+}
+
+.services-intro {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.85rem;
+    margin-bottom: 2rem;
+}
+
+/* ── Service type group ── */
+.type-group {
+    margin-bottom: 2.5rem;
+}
+
+.type-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--gold);
+    border-bottom: 1px solid rgba(200, 168, 75, 0.25);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+/* ── Individual service card ── */
+.service-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    transition: border-color 0.25s;
+}
+
+.service-card:hover {
+    border-color: rgba(200, 168, 75, 0.3);
+}
+
+/* ── Required item variant ── */
+.service-card.required {
+    border-color: rgba(220, 100, 80, 0.25);
+    background: rgba(220, 100, 80, 0.04);
+}
+
+.service-card.required:hover {
+    border-color: rgba(220, 100, 80, 0.5);
+}
+
+/* ── Service info (left side) ── */
+.service-info h4 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.service-info p {
+    font-size: 0.84rem;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.5;
+}
+
+.service-meta {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 0.4rem;
+    align-items: center;
+}
+
+.service-capacity-text {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.35);
+}
+
+/* ── Required item tag ── */
+.required-tag {
+    background: rgba(220, 100, 80, 0.15);
+    border: 1px solid rgba(220, 100, 80, 0.3);
+    color: #e88080;
+    padding: 0.2rem 0.65rem;
+    border-radius: 50px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* ── Service price (right side) ── */
+.service-price-col {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.service-price {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--gold);
+    display: block;
+    line-height: 1;
+}
+
+.service-per {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.35);
+    display: block;
+    margin-bottom: 0.6rem;
+}
+
+/* ── Attraction description text ── */
+.attraction-description {
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.8;
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+}
+
+/* ── Review section heading ── */
+.review-section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.35rem;
+    margin-bottom: 1.25rem;
+}
+
+.review-section-title em {
+    font-style: italic;
+    color: var(--gold);
+}
+
+.review-avg-score {
+    font-size: 1rem;
+    color: var(--gold);
+    margin-left: 0.5rem;
+}
+
+/* ── No reviews message ── */
+.no-reviews-msg {
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 0.85rem;
+    margin-bottom: 1.25rem;
+}
+
+/* ── Review form section ── */
+.review-form-section {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 1.25rem;
+    margin-top: 0.5rem;
+}
+
+.review-form-heading {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.review-login-prompt {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 1.25rem;
+    margin-top: 0.5rem;
+    text-align: center;
+}
+
+/* ── Review submit button ── */
+.btn-review-submit {
+    width: 100%;
+    padding: 0.7rem;
+}

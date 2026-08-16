@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Events — Iligan Tourism{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/events_list.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="sec-tag">What's On</div>
+  <h1>Upcoming <em>Events</em></h1>
+  <p>Festivals, concerts, and activities — some free, some ticketed.</p>
+</div>
+
+<section class="section">
+  <div class="grid-3">
+    {% for event in events %}
+    <a href="{% url 'event_detail' event.pk %}" class="card">
+      <div class="card-img-box">
+        {% if event.image %}
+        <img src="{{ event.image.url }}" alt="{{ event.name }}">
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <div class="event-card-date">{{ event.date|date:"F j, Y" }}</div>
+        <div class="card-name">{{ event.name }}</div>
+        <p class="card-desc">{{ event.description|truncatewords:15 }}</p>
+        <div class="event-card-meta">
+          <span class="event-card-loc">{{ event.location|truncatechars:25 }}</span>
+          {% if event.is_ticketed %}
+          <span class="badge badge-gold">PHP {{ event.ticket_price }}</span>
+          {% else %}
+          <span class="badge badge-green">Free</span>
+          {% endif %}
+        </div>
+      </div>
+    </a>
+    {% empty %}
+    <div class="no-results">No upcoming events at the moment.</div>
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}

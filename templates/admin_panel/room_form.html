@@ -1,0 +1,78 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}{% if room %}Edit{% else %}Add{% endif %} Room{% endblock %}
+{% block page_title %}{% if room %}Edit{% else %}Add{% endif %} Room{% endblock %}
+{% block content %}
+
+<div class="admin-form-wrap">
+  <div class="admin-form-card">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-grid-2">
+
+        <div class="form-group span-2">
+          <label>Hotel</label>
+          <select name="hotel" required>
+            <option value="">— Select Hotel —</option>
+            {% for h in hotels %}
+            <option value="{{ h.pk }}" {% if room.hotel_id == h.pk %}selected{% endif %}>{{ h.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Room Number</label>
+          <input type="text" name="room_number" value="{{ room.room_number|default:'' }}" required placeholder="e.g. 101, A-12">
+        </div>
+
+        <div class="form-group">
+          <label>Room Type</label>
+          <select name="room_type">
+            <option value="single" {% if room.room_type == 'single' %}selected{% endif %}>Single</option>
+            <option value="double" {% if room.room_type == 'double' %}selected{% endif %}>Double</option>
+            <option value="suite"  {% if room.room_type == 'suite' %}selected{% endif %}>Suite</option>
+            <option value="family" {% if room.room_type == 'family' %}selected{% endif %}>Family</option>
+            <option value="deluxe" {% if room.room_type == 'deluxe' %}selected{% endif %}>Deluxe</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Price per Night (PHP)</label>
+          <input type="number" name="price" value="{{ room.price|default:'0' }}" step="0.01" min="0" required>
+        </div>
+
+        <div class="form-group">
+          <label>Max Guests</label>
+          <input type="number" name="max_guests" value="{{ room.max_guests|default:'2' }}" min="1" required>
+        </div>
+
+        <div class="form-group span-2">
+          <label>Description</label>
+          <textarea name="description" rows="3" placeholder="Describe the room...">{{ room.description|default:'' }}</textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Image</label>
+          <input type="file" name="image" accept="image/*">
+          {% if room.image %}
+          <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-top:0.3rem;display:block;">Current: {{ room.image.name }}</small>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label>Options</label>
+          <label class="form-check">
+            <input type="checkbox" name="is_available" {% if room.is_available or not room %}checked{% endif %}>
+            Available for booking
+          </label>
+        </div>
+
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">{% if room %}Save Changes{% else %}Add Room{% endif %}</button>
+        <a href="{% url 'admin_rooms' %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

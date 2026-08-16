@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Attractions — Iligan Tourism{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/attractions_list.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="sec-tag">Explore</div>
+  <h1>Iligan's <em>Attractions</em></h1>
+  <p>Discover waterfalls, springs, parks, and cultural landmarks around the City of Majestic Waterfalls.</p>
+</div>
+
+<section class="section">
+  <div class="filter-bar">
+    <a href="{% url 'attractions' %}" class="filter-btn {% if not selected_category %}active{% endif %}">All</a>
+    {% for cat in categories %}
+    <a href="?category={{ cat.pk }}" class="filter-btn {% if selected_category == cat.pk %}active{% endif %}">{{ cat.name }}</a>
+    {% endfor %}
+  </div>
+
+  <div class="grid-3">
+    {% for a in attractions %}
+    <a href="{% url 'attraction_detail' a.pk %}" class="card">
+      <div class="card-img-box">
+        {% if a.image %}
+        <img src="{{ a.image.url }}" alt="{{ a.name }}">
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <div class="card-cat">{% if a.category %}{{ a.category.name }}{% endif %}</div>
+        <div class="card-name">{{ a.name }}</div>
+        <p class="card-desc">{{ a.description|truncatewords:18 }}</p>
+        <div class="card-bottom-row">
+          {% if a.entrance_fee > 0 %}
+          <span class="card-fee">PHP {{ a.entrance_fee }}</span>
+          {% else %}
+          <span class="card-fee">Free Entry</span>
+          {% endif %}
+          <span class="btn-sm btn-sm-gold">View Details</span>
+        </div>
+      </div>
+    </a>
+    {% empty %}
+    <div class="no-results">No attractions found.</div>
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}

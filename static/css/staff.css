@@ -1,0 +1,55 @@
+/* ============================================================
+   staff.css - Staff dashboard specific styles
+   ============================================================ */
+
+/* Assigned location box in sidebar */
+.staff-assigned-box {
+    background: rgba(200, 168, 75, 0.08);
+    border: 1px solid rgba(200, 168, 75, 0.2);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1rem;
+}
+
+.staff-assigned-label {
+    font-size: 0.62rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.3);
+    margin-bottom: 0.25rem;
+}
+
+.staff-assigned-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--gold);
+}
+
+/* Filter bar reuse */
+.filter-bar {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    padding: 0.45rem 1.1rem;
+    border-radius: 50px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+    background: rgba(200, 168, 75, 0.12);
+    border-color: rgba(200, 168, 75, 0.35);
+    color: var(--gold);
+}

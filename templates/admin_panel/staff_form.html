@@ -1,0 +1,92 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Add Staff{% endblock %}
+{% block page_title %}Add Staff Account{% endblock %}
+
+{% block content %}
+
+<div class="admin-form-wrap">
+  <div class="admin-form-card">
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-grid-2">
+
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" name="username" required placeholder="e.g. tinago_staff">
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" name="password" required placeholder="Set a password">
+        </div>
+
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" name="first_name" placeholder="First name">
+        </div>
+
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" name="last_name" placeholder="Last name">
+        </div>
+
+        <div class="form-group span-2">
+          <label>Role</label>
+          <select name="role" id="roleSelect" onchange="toggleAssignment()">
+            <option value="attraction">Attraction Staff</option>
+            <option value="hotel">Hotel Staff</option>
+            <option value="event">Event Staff</option>
+          </select>
+        </div>
+
+        <div class="form-group span-2" id="attractionField">
+          <label>Assigned Attraction</label>
+          <select name="attraction">
+            <option value="">— Select Attraction —</option>
+            {% for a in attractions %}
+            <option value="{{ a.pk }}">{{ a.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group span-2" id="hotelField" style="display:none;">
+          <label>Assigned Hotel</label>
+          <select name="hotel">
+            <option value="">— Select Hotel —</option>
+            {% for h in hotels %}
+            <option value="{{ h.pk }}">{{ h.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group span-2" id="eventField" style="display:none;">
+          <label>Assigned Event</label>
+          <select name="event">
+            <option value="">— Select Event —</option>
+            {% for e in events %}
+            <option value="{{ e.pk }}">{{ e.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Create Staff Account</button>
+        <a href="{% url 'admin_staff' %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function toggleAssignment() {
+    const role = document.getElementById('roleSelect').value;
+    document.getElementById('attractionField').style.display = role === 'attraction' ? '' : 'none';
+    document.getElementById('hotelField').style.display      = role === 'hotel'      ? '' : 'none';
+    document.getElementById('eventField').style.display      = role === 'event'      ? '' : 'none';
+  }
+</script>
+
+{% endblock %}

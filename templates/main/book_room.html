@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Book Room — Iligan Tourism<script>
+  const checkIn  = document.getElementById('checkIn');
+  const checkOut = document.getElementById('checkOut');
+  checkIn.addEventListener('change', function() {
+    checkOut.min = checkIn.value;
+    if (checkOut.value && checkOut.value <= checkIn.value) {
+      checkOut.value = '';
+    }
+  });
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/book_room.css' %}">
+<script>
+  const checkIn  = document.getElementById('checkIn');
+  const checkOut = document.getElementById('checkOut');
+  checkIn.addEventListener('change', function() {
+    checkOut.min = checkIn.value;
+    if (checkOut.value && checkOut.value <= checkIn.value) {
+      checkOut.value = '';
+    }
+  });
+</script>
+{% endblock %}
+
+{% block content %}
+
+<section class="section">
+  <div class="form-card">
+    <div class="sec-tag">Hotel Booking</div>
+    <div class="form-title">{{ room.hotel.name }}</div>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span>Room</span>
+        <span>{{ room.room_number }} — {{ room.get_room_type_display }}</span>
+      </div>
+      <div class="info-row">
+        <span>Max Guests</span>
+        <span>{{ room.max_guests }}</span>
+      </div>
+      <div class="info-row">
+        <span>Price</span>
+        <strong>PHP {{ room.price }} per night</strong>
+      </div>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-row-2">
+        <div class="form-group">
+          <label>Check-in Date</label>
+          <input type="date" name="check_in" required id="checkIn" min="{{ today }}">
+        </div>
+        <div class="form-group">
+          <label>Check-in Time <span class="field-hint">(optional)</span></label>
+          <input type="time" name="check_in_time">
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label>Check-out Date</label>
+          <input type="date" name="check_out" required id="checkOut" min="{{ tomorrow }}">
+        </div>
+        <div class="form-group">
+          <label>Check-out Time <span class="field-hint">(optional)</span></label>
+          <input type="time" name="check_out_time">
+        </div>
+      </div>
+      <button type="submit" class="btn-gold btn-full">Confirm Booking</button>
+    </form>
+
+    <div class="back-link-row">
+      <a href="{% url 'room_detail' room.pk %}" class="btn-ghost" style="display:block;text-align:center;margin-top:0.75rem;">← Back to Room Details</a>
+    </div>
+  </div>
+</section>
+
+<script>
+  const checkIn  = document.getElementById('checkIn');
+  const checkOut = document.getElementById('checkOut');
+  checkIn.addEventListener('change', function() {
+    checkOut.min = checkIn.value;
+    if (checkOut.value && checkOut.value <= checkIn.value) {
+      checkOut.value = '';
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ attraction.name }} — Iligan Tourism{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/attraction_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="detail-hero">
+  {% if attraction.image %}
+  <img src="{{ attraction.image.url }}" alt="{{ attraction.name }}">
+  {% endif %}
+  <div class="detail-hero-overlay"></div>
+  <div class="detail-hero-content">
+    <div class="sec-tag">{% if attraction.category %}{{ attraction.category.name }}{% endif %}</div>
+    <h1>{{ attraction.name }}</h1>
+    <div class="meta">
+      <span>{{ attraction.location }}</span>
+      {% if attraction.opening_hours %}<span>{{ attraction.opening_hours }}</span>{% endif %}
+      {% if attraction.entrance_fee > 0 %}
+      <span class="badge badge-gold">PHP {{ attraction.entrance_fee }} entrance</span>
+      {% else %}
+      <span class="badge badge-green">Free Entry</span>
+      {% endif %}
+      {% if attraction.average_rating %}
+      <span class="stars-display">{{ attraction.average_rating }} / 5</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="detail-body">
+
+  <div class="detail-main">
+    <h2 class="sec-title">About this <em>Attraction</em></h2>
+    <p class="attraction-desc">{{ attraction.description }}</p>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span>Location</span>
+        <span>{{ attraction.location }}</span>
+      </div>
+      {% if attraction.opening_hours %}
+      <div class="info-row">
+        <span>Opening Hours</span>
+        <span>{{ attraction.opening_hours }}</span>
+      </div>
+      {% endif %}
+      <div class="info-row">
+        <span>Entrance Fee</span>
+        <strong>{% if attraction.entrance_fee > 0 %}PHP {{ attraction.entrance_fee }} per person{% else %}Free{% endif %}</strong>
+      </div>
+    </div>
+
+    {% if services_by_type %}
+    <div class="services-wrap">
+      <div class="sec-tag">Available Services</div>
+      <h3 class="sec-title">Book a <em>Service</em></h3>
+      <p class="services-note">Select and book any service for your visit.</p>
+
+      {% for type_label, services in services_by_type.items %}
+      <div class="type-group">
+        <div class="type-label">{{ type_label }}</div>
+        {% for service in services %}
+        <div class="service-card {% if service.service_type == 'required_item' %}required{% endif %}">
+          <div class="service-info">
+            <h4>
+              {{ service.name }}
+              {% if service.service_type == 'required_item' %}<span class="required-tag">Required</span>{% endif %}
+            </h4>
+            <p>{{ service.description }}</p>
+            <div class="service-meta">
+              {% if service.duration %}<span class="badge badge-blue">{{ service.duration }}</span>{% endif %}
+              <span class="capacity-note">Up to {{ service.capacity }} person(s)</span>
+            </div>
+          </div>
+          <div class="service-price-col">
+            <span class="service-price">PHP {{ service.price }}</span>
+            <span class="service-per">per person</span>
+            {% if user.is_authenticated %}
+            <a href="{% url 'book_service' service.pk %}" class="btn-sm btn-sm-gold">Book Now</a>
+            {% else %}
+            <a href="{% url 'login' %}" class="btn-sm btn-sm-outline">Login to Book</a>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="detail-sidebar">
+    <div class="info-box">
+      <h3>Visitor <em>Reviews</em>
+        {% if attraction.average_rating %}
+        <span class="avg-score">{{ attraction.average_rating }} / 5</span>
+        {% endif %}
+      </h3>
+
+      {% for review in reviews %}
+      <div class="review-card">
+        <div class="review-header">
+          <span class="review-user">{{ review.user.username }}</span>
+          <span class="review-stars">{{ review.rating }} / 5</span>
+        </div>
+        <p class="review-comment">{{ review.comment }}</p>
+        <p class="review-date">{{ review.created_at|date:"M j, Y" }}</p>
+      </div>
+      {% empty %}
+      <p class="no-reviews">No reviews yet. Be the first!</p>
+      {% endfor %}
+
+      {% if user.is_authenticated %}
+        {% if user_has_booked %}
+        <div class="review-form-wrap">
+          <p class="review-form-label">Leave a Review</p>
+          <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+              <label>Rating</label>
+              <select name="rating">
+                <option value="5">5 - Excellent</option>
+                <option value="4">4 - Good</option>
+                <option value="3">3 - Average</option>
+                <option value="2">2 - Below Average</option>
+                <option value="1">1 - Poor</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Comment</label>
+              <textarea name="comment" rows="3" placeholder="Share your experience..."></textarea>
+            </div>
+            <button type="submit" class="btn-gold" style="width:100%;padding:.7rem;">Submit Review</button>
+          </form>
+        </div>
+        {% else %}
+        <div class="review-login">
+          <p style="color:rgba(255,255,255,0.4);font-size:0.85rem;text-align:center;padding:1rem 0;">
+            You must book a service at this attraction before leaving a review.
+          </p>
+        </div>
+        {% endif %}
+      {% else %}
+      <div class="review-login">
+        <a href="{% url 'login' %}" class="btn-ghost">Login to leave a review</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

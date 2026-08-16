@@ -1,0 +1,21 @@
+/* ============================================================
+   hotels_list.css
+   Styles specific to hotels_list.html
+   ============================================================ */
+
+/* ── Hotel star rating inside card ── */
+.hotel-card-stars {
+    color: var(--gold);
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    margin-bottom: 0.4rem;
+}
+
+/* ── No hotels state ── */
+.no-hotels {
+    grid-column : 1 / -1;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.3);
+    padding: 3rem;
+    font-size: 0.95rem;
+}

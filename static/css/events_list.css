@@ -1,0 +1,50 @@
+/* ============================================================
+   events_list.css
+   Styles specific to events_list.html
+   ============================================================ */
+
+/* ── Past events section ── */
+.past-events-section {
+    margin-top: 3rem;
+}
+
+/* ── Past event cards are dimmed ── */
+.past-events-section .card {
+    opacity: 0.6;
+}
+
+/* ── Event date displayed inside card ── */
+.event-card-date {
+    font-size: 0.78rem;
+    color: var(--sky);
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+}
+
+/* ── Event location + badge row ── */
+.event-card-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.75rem;
+}
+
+.event-card-location {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── View details row ── */
+.event-card-view-row {
+    text-align: center;
+    margin-top: 0.85rem;
+}
+
+/* ── No events state ── */
+.no-events {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.3);
+    padding: 3rem;
+    font-size: 0.95rem;
+}

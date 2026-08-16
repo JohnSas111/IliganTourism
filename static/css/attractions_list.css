@@ -1,0 +1,22 @@
+/* ============================================================
+   attractions_list.css
+   Styles specific to attractions_list.html
+   ============================================================ */
+
+/* ── No additional styles needed beyond base.css ──
+   This page uses: .page-header, .section, .filter-bar,
+   .filter-btn, .grid-3, .card, .card-img-box, .card-body,
+   .card-cat, .card-name, .card-desc, .card-fee, .btn-sm,
+   .btn-sm-gold — all defined in base.css
+
+   Add any attractions-list-specific overrides below.
+   ============================================================ */
+
+/* ── Empty state for no results ── */
+.no-attractions {
+    grid-column : 1 / -1;
+    text-align  : center;
+    color       : rgba(255, 255, 255, 0.3);
+    padding     : 3rem;
+    font-size   : 0.95rem;
+}

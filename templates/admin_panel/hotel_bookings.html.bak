@@ -1,0 +1,124 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}Hotel Bookings{% endblock %}
+{% block page_title %}Hotel Bookings{% endblock %}
+{% block content %}
+
+<div class="section-header">
+  <div class="section-title">Hotel <em>Bookings</em></div>
+</div>
+
+<div class="admin-table-wrap">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Hotel & Room</th>
+        <th>Check-in</th>
+        <th>Check-out</th>
+        <th>Total</th>
+        <th>Status / Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in bookings %}
+      <tr>
+        <td>
+          <div style="font-weight:600;">{{ b.user.username }}</div>
+          <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);">{{ b.user.email }}</div>
+        </td>
+        <td>
+          <div>{{ b.room.hotel.name }}</div>
+          <div style="font-size:0.78rem;color:rgba(255,255,255,0.4);">Room {{ b.room.room_number }} · {{ b.room.get_room_type_display }}</div>
+        </td>
+        <td>
+          {{ b.check_in|date:"M j, Y" }}
+          {% if b.check_in_time %}<br><span style="color:rgba(255,255,255,0.4);font-size:0.75rem;">{{ b.check_in_time|time:"g:i A" }}</span>{% endif %}
+        </td>
+        <td>
+          {{ b.check_out|date:"M j, Y" }}
+          {% if b.check_out_time %}<br><span style="color:rgba(255,255,255,0.4);font-size:0.75rem;">{{ b.check_out_time|time:"g:i A" }}</span>{% endif %}
+        </td>
+        <td>PHP {{ b.total_price }}</td>
+        <td>
+          <div class="td-actions">
+            {% if b.status == 'cancelled' %}
+              <span class="badge badge-cancelled">Cancelled by User</span>
+            {% elif b.status == 'completed' %}
+              <span class="badge badge-completed">Completed</span>
+            {% elif b.status == 'confirmed' %}
+              <span class="badge badge-confirmed">Confirmed</span>
+              <form method="post" action="{% url 'admin_update_hotel_booking' b.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="completed">
+                <button type="submit" class="btn-edit">Mark Completed</button>
+              </form>
+            {% else %}
+              <form method="post" action="{% url 'admin_update_hotel_booking' b.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="confirmed">
+                <button type="submit" class="btn-primary" style="padding:0.35rem 0.9rem;font-size:0.8rem;">Confirm</button>
+              </form>
+            {% endif %}
+            <button class="btn-secondary" style="font-size:0.78rem;padding:0.35rem 0.85rem;"
+              onclick="openModal('hotel', '{{ b.pk }}', '{{ b.user.username }}', '{{ b.user.get_full_name|default:b.user.username }}', '{{ b.user.email }}', '{{ b.room.hotel.name }}', 'Room {{ b.room.room_number }} — {{ b.room.get_room_type_display }}', '{{ b.check_in|date:\"M j, Y\" }}{% if b.check_in_time %} at {{ b.check_in_time|time:\"g:i A\" }}{% endif %}', '{{ b.check_out|date:\"M j, Y\" }}{% if b.check_out_time %} at {{ b.check_out_time|time:\"g:i A\" }}{% endif %}', 'PHP {{ b.total_price }}', '{{ b.created_at|date:\"M j, Y g:i A\" }}')">
+              View Details
+            </button>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="empty-state">No hotel bookings yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- HOTEL BOOKING MODAL -->
+<div class="modal-overlay" id="hotelModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Hotel Booking <em>Details</em></div>
+      <button class="modal-close" onclick="closeModal('hotelModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-label">Customer</div>
+        <div class="info-row"><span>Username</span><span id="m-username"></span></div>
+        <div class="info-row"><span>Full Name</span><span id="m-fullname"></span></div>
+        <div class="info-row"><span>Email</span><span id="m-email"></span></div>
+        <div class="info-row"><span>Booked On</span><span id="m-booked"></span></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Hotel Details</div>
+        <div class="info-row"><span>Hotel</span><span id="m-hotel"></span></div>
+        <div class="info-row"><span>Room</span><span id="m-room"></span></div>
+        <div class="info-row"><span>Check-in</span><span id="m-checkin"></span></div>
+        <div class="info-row"><span>Check-out</span><span id="m-checkout"></span></div>
+        <div class="info-row"><span>Total</span><strong id="m-total"></strong></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openModal(type, pk, username, fullname, email, hotel, room, checkin, checkout, total, booked) {
+  document.getElementById('m-username').textContent = username;
+  document.getElementById('m-fullname').textContent = fullname;
+  document.getElementById('m-email').textContent    = email;
+  document.getElementById('m-booked').textContent   = booked;
+  document.getElementById('m-hotel').textContent    = hotel;
+  document.getElementById('m-room').textContent     = room;
+  document.getElementById('m-checkin').textContent  = checkin;
+  document.getElementById('m-checkout').textContent = checkout;
+  document.getElementById('m-total').textContent    = total;
+  document.getElementById('hotelModal').classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+document.getElementById('hotelModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal('hotelModal');
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}{% if hotel %}Edit{% else %}Add{% endif %} Hotel{% endblock %}
+{% block page_title %}{% if hotel %}Edit{% else %}Add{% endif %} Hotel{% endblock %}
+
+{% block content %}
+
+<div class="admin-form-wrap">
+  <div class="admin-form-card">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-grid-2">
+
+        <div class="form-group span-2">
+          <label>Hotel Name</label>
+          <input type="text" name="name" value="{{ hotel.name|default:'' }}" required placeholder="Hotel name">
+        </div>
+
+        <div class="form-group span-2">
+          <label>Description</label>
+          <textarea name="description" rows="3" placeholder="Describe the hotel...">{{ hotel.description|default:'' }}</textarea>
+        </div>
+
+        <div class="form-group span-2">
+          <label>Address</label>
+          <input type="text" name="address" value="{{ hotel.address|default:'' }}" required placeholder="Full address">
+        </div>
+
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="text" name="phone" value="{{ hotel.phone|default:'' }}" placeholder="e.g. 0917-XXX-XXXX">
+        </div>
+
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" name="email" value="{{ hotel.email|default:'' }}" placeholder="hotel@email.com">
+        </div>
+
+        <div class="form-group">
+          <label>Star Rating</label>
+          <select name="stars">
+            {% for i in "12345" %}
+            <option value="{{ forloop.counter }}" {% if hotel.stars == forloop.counter %}selected{% endif %}>{{ forloop.counter }} Star(s)</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Image</label>
+          <input type="file" name="image" accept="image/*">
+          {% if hotel.image %}
+          <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-top:0.3rem;display:block;">Current: {{ hotel.image.name }}</small>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label>Status</label>
+          <label class="form-check">
+            <input type="checkbox" name="is_active" {% if hotel.is_active or not hotel %}checked{% endif %}>
+            Active (visible to users)
+          </label>
+        </div>
+
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">{% if hotel %}Save Changes{% else %}Add Hotel{% endif %}</button>
+        <a href="{% url 'admin_hotels' %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

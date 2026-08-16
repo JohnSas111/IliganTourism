@@ -1,0 +1,153 @@
+{% extends 'staff/base.html' %}
+{% block title %}Bookings{% endblock %}
+{% block page_title %}All Bookings{% endblock %}
+{% block content %}
+
+<style>
+  .search-row { display:flex; gap:.65rem; margin-bottom:1.25rem; align-items:center; flex-wrap:wrap; }
+  .search-row input { flex:1; min-width:200px; padding:.55rem .9rem; border:1.5px solid rgba(255,255,255,0.12); border-radius:8px; font-size:.9rem; outline:none; background:transparent; color:inherit; }
+  .search-row input:focus { border-color:var(--gold); }
+  .search-row .btn-search { padding:.55rem 1.1rem; background:var(--gold); color:#0b0d10; border:none; border-radius:8px; font-size:.9rem; font-weight:600; cursor:pointer; }
+  .search-row .btn-clear { padding:.55rem .9rem; background:transparent; color:rgba(255,255,255,0.5); border:1.5px solid rgba(255,255,255,0.12); border-radius:8px; font-size:.9rem; text-decoration:none; }
+  .ref-badge { font-size:.72rem; font-family:monospace; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); padding:.15rem .45rem; border-radius:4px; color:rgba(255,255,255,0.55); letter-spacing:.03em; }
+  .pagination-nav { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.65rem; margin-top:1.25rem; }
+  .pagination-info { font-size:.83rem; color:rgba(255,255,255,0.4); }
+  .pagination-list { display:flex; gap:.3rem; list-style:none; margin:0; padding:0; flex-wrap:wrap; }
+  .page-btn { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:7px; border:1.5px solid rgba(255,255,255,0.12); background:transparent; color:rgba(255,255,255,0.6); font-size:.83rem; font-weight:500; text-decoration:none; transition:all .15s; }
+  .page-btn:hover { border-color:var(--gold); color:var(--gold); }
+  .page-btn--active { background:var(--gold); border-color:var(--gold); color:#0b0d10; }
+</style>
+
+<div class="filter-bar" style="margin-bottom:1rem;">
+  <a href="?status={% if search %}&#38;q={{ search }}{% endif %}" class="filter-btn {% if not status_filter %}active{% endif %}">All</a>
+  <a href="?status=confirmed{% if search %}&#38;q={{ search }}{% endif %}" class="filter-btn {% if status_filter == 'confirmed' %}active{% endif %}">Confirmed</a>
+  <a href="?status=completed{% if search %}&#38;q={{ search }}{% endif %}" class="filter-btn {% if status_filter == 'completed' %}active{% endif %}">Completed</a>
+  <a href="?status=cancelled{% if search %}&#38;q={{ search }}{% endif %}" class="filter-btn {% if status_filter == 'cancelled' %}active{% endif %}">Cancelled</a>
+</div>
+
+<form method="get" class="search-row">
+  {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+  <input type="text" name="q" value="{{ search }}" placeholder="Search by customer name or reference number…">
+  <button type="submit" class="btn-search">Search</button>
+  {% if search %}<a href="?{% if status_filter %}status={{ status_filter }}{% endif %}" class="btn-clear">✕ Clear</a>{% endif %}
+</form>
+
+<div class="admin-table-wrap">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Ref #</th>
+        <th>Customer</th>
+        <th>Details</th>
+        <th>Date</th>
+        <th>Amount</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in bookings %}
+      <tr>
+        <td data-label="Ref #">
+          <span class="ref-badge">{{ b.reference_number|default:"—" }}</span>
+        </td>
+        <td data-label="Customer">
+          <div><div class="td-name">{{ b.user.username }}</div><div class="td-sub">{{ b.user.get_full_name }}</div></div>
+        </td>
+        <td data-label="Details">{{ b.detail }}</td>
+        <td data-label="Date">{{ b.date }}</td>
+        <td data-label="Amount">PHP {{ b.total_price }}</td>
+        <td data-label="Status"><span class="badge badge-{{ b.status }}">{{ b.get_status_display }}</span></td>
+        <td data-label="Actions">
+          <div class="td-actions">
+            {% if b.status == 'confirmed' %}
+            <form method="post" action="{% url 'staff_complete_booking' b.booking_type b.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn-primary" style="padding:0.35rem 0.9rem;font-size:0.8rem;">Mark Completed</button>
+            </form>
+            {% endif %}
+            <button class="btn-secondary btn-sm-view"
+              data-username="{{ b.user.username }}"
+              data-fullname="{{ b.user.get_full_name|default:b.user.username }}"
+              data-email="{{ b.user.email }}"
+              data-ref="{{ b.reference_number|default:'—' }}"
+              data-detail="{{ b.detail }}"
+              data-date="{{ b.date }}"
+              data-total="PHP {{ b.total_price }}"
+              data-status="{{ b.get_status_display }}"
+              data-booked="{{ b.created_at|date:'M j, Y' }}"
+              onclick="openModal(this)">Details</button>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="empty-state">No bookings found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if bookings.has_other_pages %}
+<nav class="pagination-nav">
+  <div class="pagination-info">Showing {{ bookings.start_index }}–{{ bookings.end_index }} of {{ bookings.paginator.count }} bookings</div>
+  <ul class="pagination-list">
+    {% if bookings.has_previous %}
+      <li><a class="page-btn" href="?{% if status_filter %}status={{ status_filter }}&{% endif %}{% if search %}q={{ search }}&{% endif %}page=1">«</a></li>
+      <li><a class="page-btn" href="?{% if status_filter %}status={{ status_filter }}&{% endif %}{% if search %}q={{ search }}&{% endif %}page={{ bookings.previous_page_number }}">‹</a></li>
+    {% endif %}
+    {% for num in bookings.paginator.page_range %}
+      {% if bookings.number == num %}
+        <li><span class="page-btn page-btn--active">{{ num }}</span></li>
+      {% elif num >= bookings.number|add:"-2" and num <= bookings.number|add:"2" %}
+        <li><a class="page-btn" href="?{% if status_filter %}status={{ status_filter }}&{% endif %}{% if search %}q={{ search }}&{% endif %}page={{ num }}">{{ num }}</a></li>
+      {% endif %}
+    {% endfor %}
+    {% if bookings.has_next %}
+      <li><a class="page-btn" href="?{% if status_filter %}status={{ status_filter }}&{% endif %}{% if search %}q={{ search }}&{% endif %}page={{ bookings.next_page_number }}">›</a></li>
+      <li><a class="page-btn" href="?{% if status_filter %}status={{ status_filter }}&{% endif %}{% if search %}q={{ search }}&{% endif %}page={{ bookings.paginator.num_pages }}">»</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+<div class="modal-overlay" id="bookingModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Booking <em>Details</em></div>
+      <button class="modal-close" onclick="document.getElementById('bookingModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-label">Customer</div>
+        <div class="info-row"><span>Username</span><span id="m-username"></span></div>
+        <div class="info-row"><span>Full Name</span><span id="m-fullname"></span></div>
+        <div class="info-row"><span>Email</span><span id="m-email"></span></div>
+        <div class="info-row"><span>Booked On</span><span id="m-booked"></span></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Booking Info</div>
+        <div class="info-row"><span>Reference #</span><strong id="m-ref" style="font-family:monospace;color:var(--gold);letter-spacing:.05em;"></strong></div>
+        <div class="info-row"><span>Details</span><span id="m-detail"></span></div>
+        <div class="info-row"><span>Date</span><span id="m-date"></span></div>
+        <div class="info-row"><span>Total</span><strong id="m-total"></strong></div>
+        <div class="info-row"><span>Status</span><span id="m-status"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function openModal(btn) {
+  document.getElementById('m-username').textContent = btn.dataset.username;
+  document.getElementById('m-fullname').textContent = btn.dataset.fullname;
+  document.getElementById('m-email').textContent    = btn.dataset.email;
+  document.getElementById('m-booked').textContent   = btn.dataset.booked;
+  document.getElementById('m-ref').textContent      = btn.dataset.ref;
+  document.getElementById('m-detail').textContent   = btn.dataset.detail;
+  document.getElementById('m-date').textContent     = btn.dataset.date;
+  document.getElementById('m-total').textContent    = btn.dataset.total;
+  document.getElementById('m-status').textContent   = btn.dataset.status;
+  document.getElementById('bookingModal').classList.add('open');
+}
+document.getElementById('bookingModal').addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
+</script>
+{% endblock %}

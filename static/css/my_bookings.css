@@ -1,0 +1,287 @@
+/* ============================================================
+   my_bookings.css
+   Styles specific to my_bookings.html
+   ============================================================ */
+
+/* ── Section heading with type icon ── */
+.bookings-type-heading {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.6rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ── Service type badge inside booking item ── */
+.booking-service-type {
+    font-size: 0.7rem;
+    margin-right: 0.4rem;
+}
+
+/* ── Notes text shown inside booking ── */
+.booking-notes-text {
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.82rem;
+    margin-top: 0.25rem;
+}
+
+/* ── Booked-on date text ── */
+.booking-created-date {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.78rem;
+    margin-top: 0.2rem;
+}
+
+/* ── No bookings empty state ── */
+.no-bookings-msg {
+    color: rgba(255, 255, 255, 0.3);
+    padding: 1rem 0;
+    font-size: 0.9rem;
+}
+
+.no-bookings-msg a {
+    color: var(--gold);
+    text-decoration: none;
+}
+
+/* ── Booking price + status column ── */
+.booking-right-col {
+    text-align: right;
+}
+
+/* ── View detail button ── */
+.btn-view-detail {
+    display: inline-block;
+    margin-top: 0.5rem;
+    background: var(--gold-dim);
+    color: var(--gold);
+    border: 1px solid var(--gold-border);
+    padding: 0.35rem 0.9rem;
+    border-radius: 50px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.15s;
+}
+
+.btn-view-detail:hover {
+    background: rgba(200, 168, 75, 0.25);
+}
+
+/* ── Cancel booking button ── */
+.btn-cancel-booking {
+    background: transparent;
+    border: 1px solid rgba(224, 92, 92, 0.35);
+    color: rgba(224, 92, 92, 0.7);
+    padding: 0.3rem 0.85rem;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: block;
+    width: 100%;
+}
+
+.btn-cancel-booking:hover {
+    background: rgba(224, 92, 92, 0.1);
+    color: #e05c5c;
+    border-color: rgba(224, 92, 92, 0.6);
+}
+
+/* ── Search bar ── */
+.bookings-search-bar {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.bookings-search-bar input {
+    flex: 1;
+    padding: 0.65rem 1rem;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    outline: none;
+    background: transparent;
+    color: inherit;
+    transition: border-color 0.2s;
+}
+
+.bookings-search-bar input:focus {
+    border-color: var(--gold);
+}
+
+.bookings-search-bar button {
+    padding: 0.65rem 1.4rem;
+    background: var(--gold);
+    color: #0b0d10;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.search-clear {
+    padding: 0.65rem 1rem;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    border: 1.5px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+}
+
+/* ── Pagination ── */
+.pagination-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 1.25rem 0 2rem;
+}
+
+.pagination-info {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.pagination-list {
+    display: flex;
+    gap: 0.35rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex-wrap: wrap;
+}
+
+.page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1.5px solid rgba(255, 255, 255, 0.15);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.15s;
+}
+
+.page-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+}
+
+.page-btn--active {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #0b0d10;
+}
+
+/* ── Booking actions (view + cancel area) ── */
+.booking-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+/* ── Cancel window countdown text ── */
+.cancel-window-info {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.35);
+    text-align: center;
+    line-height: 1.4;
+}
+
+.cancel-window-info.expiring-soon {
+    color: rgba(224, 140, 92, 0.8);
+}
+
+/* ── Confirm cancel modal overlay ── */
+.cancel-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.cancel-modal-overlay.open {
+    display: flex;
+}
+
+.cancel-modal {
+    background: #1a1d23;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+}
+
+.cancel-modal h3 {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.cancel-modal p {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.cancel-modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+/* ── Confirm cancel button ── */
+.btn-confirm-cancel {
+    padding: 0.6rem 1.4rem;
+    background: rgba(224, 92, 92, 0.15);
+    color: #e05c5c;
+    border: 1px solid rgba(224, 92, 92, 0.4);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-confirm-cancel:hover {
+    background: rgba(224, 92, 92, 0.25);
+}
+
+/* ── Keep booking button ── */
+.btn-keep-booking {
+    padding: 0.6rem 1.4rem;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-keep-booking:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}

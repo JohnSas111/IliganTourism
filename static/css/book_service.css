@@ -1,0 +1,53 @@
+/* ============================================================
+   book_service.css
+   Styles specific to book_service.html
+   ============================================================ */
+
+/* ── Page wrapper ── */
+.book-service-wrap {
+    max-width: 600px;
+}
+
+/* ── Form title with italic name ── */
+.book-service-title em {
+    font-style: italic;
+    color: var(--gold);
+}
+
+/* ── Price estimate hint ── */
+.price-estimate-hint {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.35);
+    margin-top: 0.35rem;
+}
+
+.price-estimate-value {
+    color: var(--gold);
+    font-weight: 600;
+}
+
+/* ── Guest label hint text ── */
+.guest-label-hint {
+    color: rgba(255, 255, 255, 0.35);
+}
+
+/* ── Notes label hint ── */
+.notes-label-hint {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* ── Back link ── */
+.back-link-row {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.back-link {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.85rem;
+    text-decoration: none;
+}
+
+.back-link:hover {
+    color: var(--gold);
+}

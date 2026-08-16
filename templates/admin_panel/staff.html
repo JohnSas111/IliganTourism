@@ -1,0 +1,44 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Staff{% endblock %}
+{% block page_title %}Staff Accounts{% endblock %}
+
+{% block content %}
+
+<div class="section-header">
+  <div class="section-title">Manage <em>Staff</em></div>
+  <a href="{% url 'admin_staff_add' %}" class="btn-primary">+ Add Staff</a>
+</div>
+
+<div class="admin-table-wrap">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Role</th>
+        <th>Assigned To</th>
+        <th>Created</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in staff_list %}
+      <tr>
+        <td>{{ s.user.username }}</td>
+        <td><span class="badge badge-confirmed">{{ s.get_role_display }}</span></td>
+        <td>{{ s.get_assigned_name }}</td>
+        <td>{{ s.created_at|date:"M j, Y" }}</td>
+        <td>
+          <div class="td-actions">
+            <a href="{% url 'admin_staff_delete' s.pk %}" class="btn-danger">Delete</a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="empty-state">No staff accounts yet. Add one above.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

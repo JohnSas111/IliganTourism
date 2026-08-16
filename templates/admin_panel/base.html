@@ -1,0 +1,128 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Admin Panel{% endblock %} — Iligan Tourism</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/admin_panel.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- MOBILE DRAWER -->
+<div class="panel-drawer" id="panelDrawer">
+  <div class="panel-drawer-header">
+    <span class="panel-drawer-title">Iligan <em>Admin</em></span>
+    <button class="panel-drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <nav class="panel-drawer-nav">
+    <a href="{% url 'admin_dashboard' %}" class="nav-item {% if active == 'dashboard' %}active{% endif %}">Dashboard</a>
+    <div class="nav-group-label">Manage</div>
+    <a href="{% url 'admin_categories' %}" class="nav-item {% if active == 'categories' %}active{% endif %}">Categories</a>
+    <a href="{% url 'admin_attractions' %}" class="nav-item {% if active == 'attractions' %}active{% endif %}">Attractions</a>
+    <a href="{% url 'admin_services' %}" class="nav-item {% if active == 'services' %}active{% endif %}">Attraction Services</a>
+    <a href="{% url 'admin_hotels' %}" class="nav-item {% if active == 'hotels' %}active{% endif %}">Hotels</a>
+    <a href="{% url 'admin_rooms' %}" class="nav-item {% if active == 'rooms' %}active{% endif %}">Rooms</a>
+    <a href="{% url 'admin_events' %}" class="nav-item {% if active == 'events' %}active{% endif %}">Events</a>
+    <div class="nav-group-label">Bookings</div>
+    <a href="{% url 'admin_hotel_bookings' %}" class="nav-item {% if active == 'hotel_bookings' %}active{% endif %}">Hotel Bookings</a>
+    <a href="{% url 'admin_event_bookings' %}" class="nav-item {% if active == 'event_bookings' %}active{% endif %}">Event Bookings</a>
+    <a href="{% url 'admin_service_bookings' %}" class="nav-item {% if active == 'service_bookings' %}active{% endif %}">Service Bookings</a>
+    <div class="nav-group-label">Users</div>
+    <a href="{% url 'admin_users' %}" class="nav-item {% if active == 'users' %}active{% endif %}">Users</a>
+    <a href="{% url 'admin_staff' %}" class="nav-item {% if active == 'staff' %}active{% endif %}">Staff</a>
+    <a href="{% url 'admin_contacts' %}" class="nav-item {% if active == 'contacts' %}active{% endif %}">Contact Messages</a>
+    <div class="nav-group-label">Site</div>
+    <a href="{% url 'home' %}" class="nav-item">View Site</a>
+  </nav>
+  <div class="panel-drawer-footer">
+    <form method="post" action="{% url 'logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="sidebar-logout">Logout</button>
+    </form>
+  </div>
+</div>
+<div class="panel-drawer-overlay" id="panelOverlay" onclick="closeDrawer()"></div>
+
+<div class="admin-layout">
+
+  <!-- DESKTOP SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="sidebar-logo-text">Iligan <em>Tourism</em></span>
+      <span class="sidebar-role">Admin Panel</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="{% url 'admin_dashboard' %}" class="nav-item {% if active == 'dashboard' %}active{% endif %}">
+        <span class="nav-icon">&#9632;</span>Dashboard
+      </a>
+      <div class="nav-group-label">Manage</div>
+      <a href="{% url 'admin_categories' %}" class="nav-item {% if active == 'categories' %}active{% endif %}"><span class="nav-icon">&#9632;</span>Categories</a>
+      <a href="{% url 'admin_attractions' %}" class="nav-item {% if active == 'attractions' %}active{% endif %}"><span class="nav-icon">&#9632;</span>Attractions</a>
+      <a href="{% url 'admin_services' %}" class="nav-item {% if active == 'services' %}active{% endif %}"><span class="nav-icon">&#9632;</span>Attraction Services</a>
+      <a href="{% url 'admin_hotels' %}" class="nav-item {% if active == 'hotels' %}active{% endif %}"><span class="nav-icon">&#9632;</span>Hotels</a>
+      <a href="{% url 'admin_rooms' %}" class="nav-item {% if active == 'rooms' %}active{% endif %}"><span class="nav-icon">&#9632;</span>Rooms</a>
+      <a href="{% url 'admin_events' %}" class="nav-item {% if active == 'events' %}active{% endif %}"><span class="nav-icon">&#9632;</span>Events</a>
+      <div class="nav-group-label">Bookings</div>
+      <a href="{% url 'admin_hotel_bookings' %}" class="nav-item {% if active == 'hotel_bookings' %}active{% endif %}"><span class="nav-icon">&#9632;</span>Hotel Bookings</a>
+      <a href="{% url 'admin_event_bookings' %}" class="nav-item {% if active == 'event_bookings' %}active{% endif %}"><span class="nav-icon">&#9632;</span>Event Bookings</a>
+      <a href="{% url 'admin_service_bookings' %}" class="nav-item {% if active == 'service_bookings' %}active{% endif %}"><span class="nav-icon">&#9632;</span>Service Bookings</a>
+      <div class="nav-group-label">Users</div>
+      <a href="{% url 'admin_users' %}" class="nav-item {% if active == 'users' %}active{% endif %}"><span class="nav-icon">&#9632;</span>Users</a>
+      <a href="{% url 'admin_staff' %}" class="nav-item {% if active == 'staff' %}active{% endif %}"><span class="nav-icon">&#9632;</span>Staff</a>
+      <a href="{% url 'admin_contacts' %}" class="nav-item {% if active == 'contacts' %}active{% endif %}"><span class="nav-icon">&#9632;</span>Contact Messages</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="{% url 'home' %}" class="sidebar-link">View Site</a>
+      <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="sidebar-logout">Logout</button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <div class="topbar-left">
+        <button class="panel-burger" id="panelBurger" onclick="openDrawer()">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="topbar-title">{% block page_title %}Dashboard{% endblock %}</div>
+      </div>
+      <div class="topbar-user">Logged in as <strong>{{ request.user.username }}</strong></div>
+    </div>
+
+    {% if messages %}
+    <div class="admin-messages">
+      {% for m in messages %}
+      <div class="admin-alert admin-alert-{{ m.tags }}">{{ m }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="admin-content">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+</div>
+
+<script>
+function openDrawer() {
+  document.getElementById('panelDrawer').classList.add('open');
+  document.getElementById('panelOverlay').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('panelDrawer').classList.remove('open');
+  document.getElementById('panelOverlay').classList.remove('open');
+}
+document.querySelectorAll('.panel-drawer-nav a').forEach(function(a) {
+  a.addEventListener('click', closeDrawer);
+});
+</script>
+
+</body>
+</html>

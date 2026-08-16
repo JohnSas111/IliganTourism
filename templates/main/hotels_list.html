@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Hotels — Iligan Tourism{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/hotels_list.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="sec-tag">Accommodations</div>
+  <h1>Hotels in <em>Iligan</em></h1>
+  <p>Find the perfect place to stay during your visit to the City of Majestic Waterfalls.</p>
+</div>
+
+<section class="section">
+  <div class="grid-3">
+    {% for hotel in hotels %}
+    <a href="{% url 'hotel_detail' hotel.pk %}" class="card">
+      <div class="card-img-box">
+        {% if hotel.image %}
+        <img src="{{ hotel.image.url }}" alt="{{ hotel.name }}">
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <div class="hotel-stars">
+          {% for i in "12345" %}{% if forloop.counter <= hotel.stars %}★{% else %}☆{% endif %}{% endfor %}
+        </div>
+        <div class="card-name">{{ hotel.name }}</div>
+        <p class="card-desc">{{ hotel.address }}</p>
+        <span class="btn-sm btn-sm-gold">View Rooms</span>
+      </div>
+    </a>
+    {% empty %}
+    <div class="no-results">No hotels available yet.</div>
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}

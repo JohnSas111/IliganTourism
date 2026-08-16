@@ -1,0 +1,150 @@
+/* ============================================================
+   event_detail.css
+   Styles specific to event_detail.html
+   ============================================================ */
+
+/* ── Event description text ── */
+.event-description {
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.8;
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+}
+
+/* ── Sidebar ticket box ── */
+.ticket-box-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+}
+
+.ticket-box-title em {
+    font-style: italic;
+    color: var(--gold);
+}
+
+.ticket-price-display {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    color: var(--gold);
+    margin-bottom: 0.25rem;
+}
+
+.ticket-price-label {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.82rem;
+    margin-bottom: 1.5rem;
+}
+
+/* ── Already booked state ── */
+.already-booked-badge {
+    display: block;
+    text-align: center;
+    padding: 0.85rem;
+    font-size: 0.85rem;
+}
+
+/* ── Book ticket button ── */
+.btn-book-ticket {
+    display: block;
+    text-align: center;
+    padding: 0.85rem;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+/* ── Login to book button ── */
+.btn-login-to-book {
+    display: block;
+    text-align: center;
+    padding: 0.85rem;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+/* ── Free event sidebar ── */
+.free-event-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.free-event-title em {
+    font-style: italic;
+    color: var(--gold);
+}
+
+.free-event-description {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.88rem;
+    line-height: 1.65;
+}
+
+.free-event-badge {
+    display: block;
+    text-align: center;
+    padding: 0.85rem;
+    font-size: 0.85rem;
+    margin-top: 1rem;
+}
+
+/* Ticket price display */
+.ticket-price {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    color: var(--gold);
+    margin-bottom: 0.25rem;
+}
+
+.ticket-label {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.82rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Already booked badge */
+.booked-badge {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(74, 158, 114, 0.12);
+    border: 1px solid rgba(74, 158, 114, 0.3);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+}
+
+.booked-badge-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(74, 158, 114, 0.2);
+    border: 1px solid rgba(74, 158, 114, 0.4);
+    color: var(--sage);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.booked-badge-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--sage);
+}
+
+.booked-badge-sub {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 0.15rem;
+}
+
+/* Free event note */
+.free-event-note {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.88rem;
+    line-height: 1.65;
+}

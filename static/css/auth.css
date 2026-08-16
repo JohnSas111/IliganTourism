@@ -1,0 +1,115 @@
+/* ============================================================
+   auth.css
+   Styles specific to login.html and register.html
+   ============================================================ */
+
+/* ── Auth page wrapper ── */
+.auth-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background:
+        radial-gradient(ellipse at 50% 0%, rgba(27, 107, 138, 0.2) 0%, transparent 60%),
+        var(--forest);
+}
+
+/* ── Auth card ── */
+.auth-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 20px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 420px;
+}
+
+/* ── Auth logo link ── */
+.auth-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--white);
+    text-decoration: none;
+    display: block;
+    margin-bottom: 1.75rem;
+}
+
+.auth-logo span {
+    color: var(--gold);
+}
+
+/* ── Auth headings ── */
+.auth-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.9rem;
+    font-weight: 400;
+    margin-bottom: 0.25rem;
+}
+
+.auth-sub {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.88rem;
+    margin-bottom: 1.75rem;
+}
+
+/* ── Auth footer link row ── */
+.auth-footer {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.85rem;
+    margin-top: 1.25rem;
+}
+
+.auth-footer a {
+    color: var(--gold);
+    text-decoration: none;
+}
+
+/* ── Cancel button ── */
+.btn-cancel {
+    display: block;
+    text-align: center;
+    margin-top: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.btn-cancel:hover {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.auth-card .form-group input,
+.auth-card .form-group select {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--white);
+    padding: 0.7rem 1rem;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.auth-card .form-group input:focus,
+.auth-card .form-group select:focus {
+    border-color: rgba(200, 168, 75, 0.5);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.auth-card .form-group label {
+    display: block;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 0.4rem;
+    font-weight: 500;
+}
+
+.auth-card .form-group {
+    margin-bottom: 1.1rem;
+}

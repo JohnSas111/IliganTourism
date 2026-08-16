@@ -1,0 +1,61 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Hotels{% endblock %}
+{% block page_title %}Hotels{% endblock %}
+
+{% block content %}
+
+<div class="section-header">
+  <div class="section-title">Manage <em>Hotels</em></div>
+  <a href="{% url 'admin_hotel_add' %}" class="btn-primary">+ Add Hotel</a>
+</div>
+
+<div class="admin-table-wrap">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Image</th>
+        <th>Name</th>
+        <th>Address</th>
+        <th>Stars</th>
+        <th>Rooms</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for hotel in hotels %}
+      <tr>
+        <td>
+          {% if hotel.image %}
+          <img src="{{ hotel.image.url }}" alt="{{ hotel.name }}" class="table-thumb">
+          {% else %}
+          <div class="table-thumb-placeholder">No img</div>
+          {% endif %}
+        </td>
+        <td>{{ hotel.name }}</td>
+        <td>{{ hotel.address }}</td>
+        <td>{% for i in "12345" %}{% if forloop.counter <= hotel.stars %}★{% else %}☆{% endif %}{% endfor %}</td>
+        <td>{{ hotel.rooms.count }} room(s)</td>
+        <td>
+          {% if hotel.is_active %}
+          <span class="badge badge-active">Active</span>
+          {% else %}
+          <span class="badge badge-inactive">Inactive</span>
+          {% endif %}
+        </td>
+        <td>
+          <div class="td-actions">
+            <a href="{% url 'admin_hotel_edit' hotel.pk %}" class="btn-edit">Edit</a>
+            <a href="{% url 'admin_hotel_delete' hotel.pk %}" class="btn-danger">Delete</a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="empty-state">No hotels yet. Add one above.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

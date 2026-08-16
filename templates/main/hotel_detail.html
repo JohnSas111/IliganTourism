@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ hotel.name }} — Iligan Tourism{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/hotel_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="detail-hero">
+  {% if hotel.image %}
+  <img src="{{ hotel.image.url }}" alt="{{ hotel.name }}">
+  {% endif %}
+  <div class="detail-hero-overlay"></div>
+  <div class="detail-hero-content">
+    <div class="sec-tag">Hotel</div>
+    <h1>{{ hotel.name }}</h1>
+    <div class="meta">
+      <span>{% for i in "12345" %}{% if forloop.counter <= hotel.stars %}★{% else %}☆{% endif %}{% endfor %}</span>
+      <span>{{ hotel.address }}</span>
+      {% if hotel.average_rating %}<span class="stars-display">{{ hotel.average_rating }} / 5</span>{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="detail-body">
+  <div class="detail-main">
+    <h2 class="sec-title">About <em>{{ hotel.name }}</em></h2>
+    <p class="hotel-desc">{{ hotel.description }}</p>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span>Address</span>
+        <span>{{ hotel.address }}</span>
+      </div>
+      {% if hotel.phone %}
+      <div class="info-row">
+        <span>Phone</span>
+        <span>{{ hotel.phone }}</span>
+      </div>
+      {% endif %}
+      {% if hotel.email %}
+      <div class="info-row">
+        <span>Email</span>
+        <span>{{ hotel.email }}</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="rooms-wrap">
+      <div class="sec-tag">Available Rooms</div>
+      <h3 class="sec-title">Choose a <em>Room</em></h3>
+      {% for room in rooms %}
+      <div class="room-card {% if room.is_booked %}room-booked{% endif %}">
+        <div class="room-info">
+          <h4>Room {{ room.room_number }} — {{ room.get_room_type_display }}</h4>
+          {% if room.description %}<p>{{ room.description }}</p>{% endif %}
+          <p class="room-capacity">Up to {{ room.max_guests }} guest(s)</p>
+          {% if room.is_booked %}
+            <span class="badge badge-red">Has Active Booking</span>
+            {% if room.booked_ranges %}
+              <span style="font-size:0.75rem; color:rgba(255,255,255,0.35);">
+                {{ room.booked_ranges|length }} active booking(s)
+              </span>
+            {% endif %}
+          {% else %}
+            <span class="badge badge-green">Available</span>
+          {% endif %}
+        </div>
+        <div class="room-price-col">
+          <span class="room-price">PHP {{ room.price }}</span>
+          <span class="room-per">per night</span>
+          <a href="{% url 'room_detail' room.pk %}" class="btn-sm btn-sm-gold">View & Book</a>
+        </div>
+      </div>
+      {% empty %}
+      <p class="no-rooms">No available rooms at the moment.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="detail-sidebar">
+    <div class="info-box">
+      <h3>Guest <em>Reviews</em></h3>
+      {% for review in reviews %}
+      <div class="review-card">
+        <div class="review-header">
+          <span class="review-user">{{ review.user.username }}</span>
+          <span class="review-stars">{{ review.rating }} / 5</span>
+        </div>
+        <p class="review-comment">{{ review.comment }}</p>
+        <p class="review-date">{{ review.created_at|date:"M j, Y" }}</p>
+      </div>
+      {% empty %}
+      <p class="no-reviews">No reviews yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

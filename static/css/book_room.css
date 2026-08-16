@@ -1,0 +1,25 @@
+/* ============================================================
+   book_room.css
+   Styles specific to book_room.html
+   ============================================================ */
+
+/* ── Page wrapper ── */
+.book-room-wrap {
+    max-width: 600px;
+}
+
+/* ── Back link ── */
+.back-link-row {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.back-link {
+    color: inherit;
+    font-size: 0.85rem;
+    text-decoration: none;
+}
+
+.back-link:hover {
+    color: var(--gold);
+}

@@ -1,0 +1,15 @@
+/* ============================================================
+   contact.css
+   Styles specific to contact.html
+   ============================================================ */
+
+/* ── Page wrapper ── */
+.contact-wrap {
+    max-width: 600px;
+}
+
+/* ── Form title ── */
+.contact-title em {
+    font-style: italic;
+    color: var(--gold);
+}

@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Booking Details — Iligan Tourism{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/my_bookings.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="sec-tag">Your Booking</div>
+  <h1>Booking <em>Details</em></h1>
+</div>
+
+<section class="section" style="max-width:800px;">
+
+  {% if booking_type == 'hotel' %}
+  <div class="info-box">
+    <div class="info-row">
+      <span>Reference No.</span>
+      <strong style="font-family:monospace;color:var(--gold);letter-spacing:0.05em;">{{ booking.reference_number|default:"—" }}</strong>
+    </div>
+    <div class="info-row">
+      <span>Booking Type</span>
+      <span class="badge badge-blue">Hotel</span>
+    </div>
+    <div class="info-row">
+      <span>Hotel</span>
+      <span>{{ booking.room.hotel.name }}</span>
+    </div>
+    <div class="info-row">
+      <span>Room</span>
+      <span>Room {{ booking.room.room_number }} — {{ booking.room.get_room_type_display }}</span>
+    </div>
+    <div class="info-row">
+      <span>Max Guests</span>
+      <span>{{ booking.room.max_guests }} person(s)</span>
+    </div>
+    <div class="info-row">
+      <span>Check-in</span>
+      <span>{{ booking.check_in|date:"F j, Y" }}{% if booking.check_in_time %} at {{ booking.check_in_time|time:"g:i A" }}{% endif %}</span>
+    </div>
+    <div class="info-row">
+      <span>Check-out</span>
+      <span>{{ booking.check_out|date:"F j, Y" }}{% if booking.check_out_time %} at {{ booking.check_out_time|time:"g:i A" }}{% endif %}</span>
+    </div>
+    <div class="info-row">
+      <span>Total Price</span>
+      <strong>PHP {{ booking.total_price }}</strong>
+    </div>
+    <div class="info-row">
+      <span>Status</span>
+      <span class="status-{{ booking.status }}">{{ booking.get_status_display }}</span>
+    </div>
+    <div class="info-row">
+      <span>Booked On</span>
+      <span>{{ booking.created_at|date:"F j, Y" }}</span>
+    </div>
+  </div>
+  {% if booking.status == 'pending' %}
+  <form method="post" action="{% url 'cancel_hotel_booking' booking.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="btn-cancel-booking" onclick="return confirm('Cancel this booking?')">Cancel Booking</button>
+  </form>
+  {% endif %}
+
+  {% elif booking_type == 'event' %}
+  <div class="info-box">
+    <div class="info-row">
+      <span>Reference No.</span>
+      <strong style="font-family:monospace;color:var(--gold);letter-spacing:0.05em;">{{ booking.reference_number|default:"—" }}</strong>
+    </div>
+    <div class="info-row">
+      <span>Booking Type</span>
+      <span class="badge badge-gold">Event</span>
+    </div>
+    <div class="info-row">
+      <span>Event</span>
+      <span>{{ booking.event.name }}</span>
+    </div>
+    <div class="info-row">
+      <span>Date</span>
+      <span>{{ booking.event.date|date:"F j, Y" }}{% if booking.event.time %} at {{ booking.event.time|time:"g:i A" }}{% endif %}</span>
+    </div>
+    <div class="info-row">
+      <span>Location</span>
+      <span>{{ booking.event.location }}</span>
+    </div>
+    <div class="info-row">
+      <span>Tickets</span>
+      <span>{{ booking.num_tickets }}</span>
+    </div>
+    <div class="info-row">
+      <span>Price per Ticket</span>
+      <span>PHP {{ booking.event.ticket_price }}</span>
+    </div>
+    <div class="info-row">
+      <span>Total Price</span>
+      <strong>PHP {{ booking.total_price }}</strong>
+    </div>
+    <div class="info-row">
+      <span>Status</span>
+      <span class="status-{{ booking.status }}">{{ booking.get_status_display }}</span>
+    </div>
+    <div class="info-row">
+      <span>Booked On</span>
+      <span>{{ booking.created_at|date:"F j, Y" }}</span>
+    </div>
+  </div>
+  {% if booking.status == 'pending' %}
+  <form method="post" action="{% url 'cancel_event_booking' booking.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="btn-cancel-booking" onclick="return confirm('Cancel this booking?')">Cancel Booking</button>
+  </form>
+  {% endif %}
+
+  {% elif booking_type == 'service' %}
+  <div class="info-box">
+    <div class="info-row">
+      <span>Reference No.</span>
+      <strong style="font-family:monospace;color:var(--gold);letter-spacing:0.05em;">{{ booking.reference_number|default:"—" }}</strong>
+    </div>
+    <div class="info-row">
+      <span>Booking Type</span>
+      <span class="badge badge-green">Attraction Service</span>
+    </div>
+    <div class="info-row">
+      <span>Attraction</span>
+      <span>{{ booking.service.attraction.name }}</span>
+    </div>
+    <div class="info-row">
+      <span>Service</span>
+      <span>{{ booking.service.name }}</span>
+    </div>
+    <div class="info-row">
+      <span>Service Type</span>
+      <span>{{ booking.service.get_service_type_display }}</span>
+    </div>
+    <div class="info-row">
+      <span>Visit Date</span>
+      <span>{{ booking.visit_date|date:"F j, Y" }}</span>
+    </div>
+    <div class="info-row">
+      <span>Guests</span>
+      <span>{{ booking.num_guests }}</span>
+    </div>
+    {% if booking.notes %}
+    <div class="info-row">
+      <span>Special Requests</span>
+      <span>{{ booking.notes }}</span>
+    </div>
+    {% endif %}
+    <div class="info-row">
+      <span>Total Price</span>
+      <strong>PHP {{ booking.total_price }}</strong>
+    </div>
+    <div class="info-row">
+      <span>Status</span>
+      <span class="status-{{ booking.status }}">{{ booking.get_status_display }}</span>
+    </div>
+    <div class="info-row">
+      <span>Booked On</span>
+      <span>{{ booking.created_at|date:"F j, Y" }}</span>
+    </div>
+  </div>
+  {% if booking.status == 'pending' %}
+  <form method="post" action="{% url 'cancel_service_booking' booking.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="btn-cancel-booking" onclick="return confirm('Cancel this booking?')">Cancel Booking</button>
+  </form>
+  {% endif %}
+  {% endif %}
+
+  <div style="margin-top:1.5rem;">
+    <a href="{% url 'my_bookings' %}" class="btn-ghost">← Back to My Bookings</a>
+  </div>
+
+</section>
+
+{% endblock %}

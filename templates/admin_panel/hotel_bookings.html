@@ -1,0 +1,208 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}Hotel Bookings{% endblock %}
+{% block page_title %}Hotel Bookings{% endblock %}
+{% block content %}
+
+<style>
+  .search-row {
+    display: flex;
+    gap: .65rem;
+    margin-bottom: 1.25rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .search-row input {
+    flex: 1;
+    min-width: 200px;
+    padding: .55rem .9rem;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    font-size: .9rem;
+    outline: none;
+  }
+  .search-row input:focus { border-color: #2563eb; }
+  .search-row .btn-search {
+    padding: .55rem 1.1rem;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .search-row .btn-clear {
+    padding: .55rem .9rem;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    font-size: .9rem;
+    text-decoration: none;
+  }
+  .results-count { font-size:.85rem; color:#6b7280; margin-bottom:1rem; }
+  .pagination-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .65rem;
+    margin-top: 1.25rem;
+  }
+  .pagination-info { font-size:.83rem; color:#6b7280; }
+  .pagination-list { display:flex; gap:.3rem; list-style:none; margin:0; padding:0; flex-wrap:wrap; }
+  .page-btn {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:34px; height:34px;
+    border-radius:7px; border:1.5px solid #d1d5db;
+    background:#fff; color:#374151;
+    font-size:.83rem; font-weight:500;
+    text-decoration:none; transition:all .15s;
+  }
+  .page-btn:hover { background:#eff6ff; border-color:#2563eb; color:#2563eb; }
+  .page-btn--active { background:#2563eb; border-color:#2563eb; color:#fff; }
+</style>
+
+<div class="section-header">
+  <div class="section-title">Hotel <em>Bookings</em></div>
+</div>
+
+<form method="get" class="search-row">
+  <input type="text" name="q" value="{{ search }}" placeholder="Search by user, hotel or room…">
+  <button type="submit" class="btn-search">Search</button>
+  {% if search %}<a href="?" class="btn-clear">✕ Clear</a>{% endif %}
+</form>
+
+{% if search %}
+  <p class="results-count">Results for <strong>"{{ search }}"</strong> — {{ bookings.paginator.count }} found</p>
+{% endif %}
+
+<div class="admin-table-wrap">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Hotel & Room</th>
+        <th>Check-in</th>
+        <th>Check-out</th>
+        <th>Total</th>
+        <th>Status / Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in bookings %}
+      <tr>
+        <td data-label="User">
+          <div><div><div class="td-name">{{ b.user.username }}</div><div class="td-sub">{{ b.user.email }}</div></div></div>
+        </td>
+        <td data-label="Hotel & Room">
+          <div><div>{{ b.room.hotel.name }}</div><div class="td-sub">Room {{ b.room.room_number }} · {{ b.room.get_room_type_display }}</div></div>
+        </td>
+        <td data-label="Check-in"><div>{{ b.check_in|date:"M j, Y" }}{% if b.check_in_time %}<br><small class="td-sub">{{ b.check_in_time|time:"g:i A" }}</small>{% endif %}</div></td>
+        <td data-label="Check-out"><div>{{ b.check_out|date:"M j, Y" }}{% if b.check_out_time %}<br><small class="td-sub">{{ b.check_out_time|time:"g:i A" }}</small>{% endif %}</div></td>
+        <td data-label="Total"><div>PHP {{ b.total_price }}</div></td>
+        <td data-label="Status">
+          <div class="td-actions">
+            {% if b.status == 'cancelled' %}
+              <span class="badge badge-cancelled">Cancelled</span>
+            {% elif b.status == 'completed' %}
+              <span class="badge badge-completed">Completed</span>
+            {% elif b.status == 'confirmed' %}
+              <span class="badge badge-confirmed">Confirmed</span>
+              <form method="post" action="{% url 'admin_update_hotel_booking' b.pk %}">
+                {% csrf_token %}<input type="hidden" name="status" value="completed">
+                <button type="submit" class="btn-edit">Done</button>
+              </form>
+            {% else %}
+              <form method="post" action="{% url 'admin_update_hotel_booking' b.pk %}">
+                {% csrf_token %}<input type="hidden" name="status" value="confirmed">
+                <button type="submit" class="btn-primary" style="padding:0.35rem 0.9rem;font-size:0.8rem;">Confirm</button>
+              </form>
+            {% endif %}
+            <button class="btn-secondary btn-sm-view"
+              data-username="{{ b.user.username }}"
+              data-fullname="{{ b.user.get_full_name|default:b.user.username }}"
+              data-email="{{ b.user.email }}"
+              data-hotel="{{ b.room.hotel.name }}"
+              data-room="Room {{ b.room.room_number }} — {{ b.room.get_room_type_display }}"
+              data-checkin="{{ b.check_in|date:'M j, Y' }}{% if b.check_in_time %} at {{ b.check_in_time|time:'g:i A' }}{% endif %}"
+              data-checkout="{{ b.check_out|date:'M j, Y' }}{% if b.check_out_time %} at {{ b.check_out_time|time:'g:i A' }}{% endif %}"
+              data-total="PHP {{ b.total_price }}"
+              data-booked="{{ b.created_at|date:'M j, Y' }}"
+              onclick="openHotelModal(this)">Details</button>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="empty-state">{% if search %}No bookings match your search.{% else %}No hotel bookings yet.{% endif %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if bookings.has_other_pages %}
+<nav class="pagination-nav">
+  <div class="pagination-info">
+    Showing {{ bookings.start_index }}–{{ bookings.end_index }} of {{ bookings.paginator.count }} bookings
+  </div>
+  <ul class="pagination-list">
+    {% if bookings.has_previous %}
+      <li><a class="page-btn" href="?{% if search %}q={{ search }}&{% endif %}page=1">«</a></li>
+      <li><a class="page-btn" href="?{% if search %}q={{ search }}&{% endif %}page={{ bookings.previous_page_number }}">‹</a></li>
+    {% endif %}
+    {% for num in bookings.paginator.page_range %}
+      {% if bookings.number == num %}
+        <li><span class="page-btn page-btn--active">{{ num }}</span></li>
+      {% elif num >= bookings.number|add:"-2" and num <= bookings.number|add:"2" %}
+        <li><a class="page-btn" href="?{% if search %}q={{ search }}&{% endif %}page={{ num }}">{{ num }}</a></li>
+      {% endif %}
+    {% endfor %}
+    {% if bookings.has_next %}
+      <li><a class="page-btn" href="?{% if search %}q={{ search }}&{% endif %}page={{ bookings.next_page_number }}">›</a></li>
+      <li><a class="page-btn" href="?{% if search %}q={{ search }}&{% endif %}page={{ bookings.paginator.num_pages }}">»</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+<div class="modal-overlay" id="hotelModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Hotel Booking <em>Details</em></div>
+      <button class="modal-close" onclick="document.getElementById('hotelModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-label">Customer</div>
+        <div class="info-row"><span>Username</span><span id="hm-username"></span></div>
+        <div class="info-row"><span>Full Name</span><span id="hm-fullname"></span></div>
+        <div class="info-row"><span>Email</span><span id="hm-email"></span></div>
+        <div class="info-row"><span>Booked On</span><span id="hm-booked"></span></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Hotel Details</div>
+        <div class="info-row"><span>Hotel</span><span id="hm-hotel"></span></div>
+        <div class="info-row"><span>Room</span><span id="hm-room"></span></div>
+        <div class="info-row"><span>Check-in</span><span id="hm-checkin"></span></div>
+        <div class="info-row"><span>Check-out</span><span id="hm-checkout"></span></div>
+        <div class="info-row"><span>Total</span><strong id="hm-total"></strong></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function openHotelModal(btn) {
+  document.getElementById('hm-username').textContent = btn.dataset.username;
+  document.getElementById('hm-fullname').textContent = btn.dataset.fullname;
+  document.getElementById('hm-email').textContent    = btn.dataset.email;
+  document.getElementById('hm-booked').textContent   = btn.dataset.booked;
+  document.getElementById('hm-hotel').textContent    = btn.dataset.hotel;
+  document.getElementById('hm-room').textContent     = btn.dataset.room;
+  document.getElementById('hm-checkin').textContent  = btn.dataset.checkin;
+  document.getElementById('hm-checkout').textContent = btn.dataset.checkout;
+  document.getElementById('hm-total').textContent    = btn.dataset.total;
+  document.getElementById('hotelModal').classList.add('open');
+}
+document.getElementById('hotelModal').addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
+</script>
+{% endblock %}

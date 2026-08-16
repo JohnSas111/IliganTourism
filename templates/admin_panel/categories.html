@@ -1,0 +1,39 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}Categories{% endblock %}
+{% block page_title %}Categories{% endblock %}
+{% block content %}
+
+<div class="section-header">
+  <div class="section-title">Manage <em>Categories</em></div>
+  <a href="{% url 'admin_category_add' %}" class="btn-primary">+ Add Category</a>
+</div>
+
+<div class="admin-table-wrap">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Attractions</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cat in categories %}
+      <tr>
+        <td>{{ cat.name }}</td>
+        <td>{{ cat.attraction_set.count }}</td>
+        <td>
+          <div class="td-actions">
+            <a href="{% url 'admin_category_edit' cat.pk %}" class="btn-edit">Edit</a>
+            <a href="{% url 'admin_category_delete' cat.pk %}" class="btn-danger">Delete</a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="3" class="empty-state">No categories yet. Add one above.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

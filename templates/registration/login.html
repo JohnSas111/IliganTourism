@@ -1,0 +1,44 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Iligan Tourism</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-card">
+    <a href="{% url 'home' %}" class="auth-logo">Iligan <span>Tourism</span></a>
+    <div class="auth-title">Welcome Back</div>
+    <div class="auth-sub">Sign in to your account</div>
+
+    {% if login_error %}
+    <div class="alert alert-error">Invalid username or password.</div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" name="username" required placeholder="Your username" autofocus>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password" required placeholder="Your password">
+      </div>
+      <input type="hidden" name="next" value="{{ next }}">
+      <button type="submit" class="btn-gold btn-full">Sign In</button>
+      <a href="{% url 'home' %}" class="btn-cancel">Cancel</a>
+    </form>
+
+    <div class="auth-footer">
+      Don't have an account? <a href="{% url 'register' %}">Register here</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

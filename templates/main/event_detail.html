@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ event.name }} — Iligan Tourism{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/event_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="detail-hero">
+  {% if event.image %}
+  <img src="{{ event.image.url }}" alt="{{ event.name }}">
+  {% endif %}
+  <div class="detail-hero-overlay"></div>
+  <div class="detail-hero-content">
+    <div class="sec-tag">Event</div>
+    <h1>{{ event.name }}</h1>
+    <div class="meta">
+      <span>{{ event.date|date:"F j, Y" }}{% if event.time %} at {{ event.time|time:"g:i A" }}{% endif %}</span>
+      <span>{{ event.location }}</span>
+      {% if event.is_ticketed %}
+      <span class="badge badge-gold">PHP {{ event.ticket_price }} per ticket</span>
+      {% else %}
+      <span class="badge badge-green">Free Event</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="detail-body">
+  <div class="detail-main">
+    <h2 class="sec-title">About this <em>Event</em></h2>
+    <p class="event-desc">{{ event.description }}</p>
+    <div class="info-box">
+      <div class="info-row">
+        <span>Date</span>
+        <span>{{ event.date|date:"F j, Y" }}</span>
+      </div>
+      {% if event.time %}
+      <div class="info-row">
+        <span>Time</span>
+        <span>{{ event.time|time:"g:i A" }}</span>
+      </div>
+      {% endif %}
+      <div class="info-row">
+        <span>Location</span>
+        <span>{{ event.location }}</span>
+      </div>
+      <div class="info-row">
+        <span>Admission</span>
+        <strong>{% if event.is_ticketed %}PHP {{ event.ticket_price }}{% else %}Free{% endif %}</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-sidebar">
+    <div class="info-box">
+      {% if event.is_ticketed %}
+      <h3>Get Your <em>Ticket</em></h3>
+      <div class="ticket-price">PHP {{ event.ticket_price }}</div>
+      <div class="ticket-label">per ticket</div>
+      {% if user_booked %}
+      <div class="booked-badge">
+        <div class="booked-badge-icon">✓</div>
+        <div>
+          <div class="booked-badge-title">Already Booked</div>
+          <div class="booked-badge-sub">You have tickets for this event</div>
+        </div>
+      </div>
+      {% elif user.is_authenticated %}
+      <a href="{% url 'book_event' event.pk %}" class="btn-gold" style="display:block;text-align:center;padding:0.85rem;border-radius:50px;font-size:0.92rem;font-weight:600;text-decoration:none;">Book Ticket</a>
+      {% else %}
+      <a href="{% url 'login' %}" class="btn-ghost" style="display:block;text-align:center;padding:0.85rem;border-radius:50px;font-size:0.9rem;text-decoration:none;">Login to Book</a>
+      {% endif %}
+      {% else %}
+      <h3>Free <em>Event</em></h3>
+      <p class="free-event-note">This is a free event open to all. No booking required — just show up!</p>
+      <span class="badge badge-green" style="display:block;text-align:center;padding:0.85rem;margin-top:1rem;">Open to Everyone</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

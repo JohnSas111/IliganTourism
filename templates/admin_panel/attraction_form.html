@@ -1,0 +1,75 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}{% if attraction %}Edit{% else %}Add{% endif %} Attraction{% endblock %}
+{% block page_title %}{% if attraction %}Edit{% else %}Add{% endif %} Attraction{% endblock %}
+
+{% block content %}
+
+<div class="admin-form-wrap">
+  <div class="admin-form-card">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-grid-2">
+
+        <div class="form-group span-2">
+          <label>Name</label>
+          <input type="text" name="name" value="{{ attraction.name|default:'' }}" required placeholder="Attraction name">
+        </div>
+
+        <div class="form-group">
+          <label>Category</label>
+          <select name="category">
+            <option value="">— None —</option>
+            {% for cat in categories %}
+            <option value="{{ cat.pk }}" {% if attraction.category_id == cat.pk %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" name="location" value="{{ attraction.location|default:'' }}" required placeholder="e.g. Iligan City">
+        </div>
+
+        <div class="form-group span-2">
+          <label>Description</label>
+          <textarea name="description" rows="4" placeholder="Describe the attraction...">{{ attraction.description|default:'' }}</textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Opening Hours</label>
+          <input type="text" name="opening_hours" value="{{ attraction.opening_hours|default:'' }}" placeholder="e.g. 8:00 AM – 5:00 PM">
+        </div>
+
+        <div class="form-group">
+          <label>Entrance Fee (PHP)</label>
+          <input type="number" name="entrance_fee" value="{{ attraction.entrance_fee|default:'0' }}" step="0.01" min="0">
+        </div>
+
+        <div class="form-group">
+          <label>Image</label>
+          <input type="file" name="image" accept="image/*">
+          {% if attraction.image %}
+          <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-top:0.3rem;display:block;">Current: {{ attraction.image.name }}</small>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label>Options</label>
+          <label class="form-check">
+            <input type="checkbox" name="is_featured" {% if attraction.is_featured %}checked{% endif %}>
+            Mark as Featured (shows on homepage)
+          </label>
+        </div>
+
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">{% if attraction %}Save Changes{% else %}Add Attraction{% endif %}</button>
+        <a href="{% url 'admin_attractions' %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

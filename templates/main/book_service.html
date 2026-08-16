@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Book Service — Iligan Tourism{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/book_service.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<section class="section">
+  <div class="form-card">
+    <div class="sec-tag">{{ service.get_service_type_display }}</div>
+    <div class="form-title">Book: <em>{{ service.name }}</em></div>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span>Attraction</span>
+        <span>{{ service.attraction.name }}</span>
+      </div>
+      <div class="info-row">
+        <span>Service Type</span>
+        <span>{{ service.get_service_type_display }}</span>
+      </div>
+      {% if service.duration %}
+      <div class="info-row">
+        <span>Duration</span>
+        <span>{{ service.duration }}</span>
+      </div>
+      {% endif %}
+      <div class="info-row">
+        <span>Max Capacity</span>
+        <span>{{ service.capacity }} person(s)</span>
+      </div>
+      <div class="info-row">
+        <span>Price</span>
+        <strong>PHP {{ service.price }} per person</strong>
+      </div>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Visit Date</label>
+        <input type="date" name="visit_date" required min="{{ today }}">
+      </div>
+      <div class="form-group">
+        <label>Number of Guests (max {{ service.capacity }})</label>
+        <input type="number" name="num_guests" id="guestInput" min="1" max="{{ service.capacity }}" value="1" required>
+        <p class="price-hint">Estimated total: <span id="totalEst">PHP {{ service.price }}</span></p>
+      </div>
+      <div class="form-group">
+        <label>Special Requests (optional)</label>
+        <textarea name="notes" rows="3" placeholder="Any special requests or notes..."></textarea>
+      </div>
+      <button type="submit" class="btn-gold btn-full">Confirm Booking</button>
+    </form>
+
+    <div class="back-link-row">
+      <a href="{% url 'attraction_detail' service.attraction.pk %}" class="back-link">Back to {{ service.attraction.name }}</a>
+    </div>
+  </div>
+</section>
+
+<script>
+  const price = {{ service.price }};
+  const input = document.getElementById('guestInput');
+  const est = document.getElementById('totalEst');
+  input.addEventListener('input', function() {
+    const n = parseInt(input.value) || 1;
+    est.textContent = 'PHP ' + (price * n).toLocaleString();
+  });
+</script>
+
+{% endblock %}

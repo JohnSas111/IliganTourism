@@ -1,0 +1,135 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Staff Dashboard{% endblock %} — Iligan Tourism</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/admin_panel.css' %}">
+  <link rel="stylesheet" href="{% static 'css/staff.css' %}">
+</head>
+<body>
+
+<!-- MOBILE DRAWER -->
+<div class="panel-drawer" id="panelDrawer">
+  <div class="panel-drawer-header">
+    <span class="panel-drawer-title">
+      {% if request.user.staff_profile.role == 'attraction' %}Attraction Staff
+      {% elif request.user.staff_profile.role == 'hotel' %}Hotel Staff
+      {% elif request.user.staff_profile.role == 'event' %}Event Staff
+      {% endif %}
+    </span>
+    <button class="panel-drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="panel-drawer-assigned">
+    <div class="staff-assigned-label">Assigned to</div>
+    <div class="staff-assigned-name">{{ request.user.staff_profile.get_assigned_name }}</div>
+  </div>
+  <nav class="panel-drawer-nav">
+    <a href="{% url 'staff_dashboard' %}" class="nav-item {% if active == 'dashboard' %}active{% endif %}">Dashboard</a>
+    {% if request.user.staff_profile.role == 'attraction' %}
+    <a href="{% url 'staff_bookings' %}" class="nav-item {% if active == 'bookings' %}active{% endif %}">Service Bookings</a>
+    {% elif request.user.staff_profile.role == 'hotel' %}
+    <a href="{% url 'staff_bookings' %}" class="nav-item {% if active == 'bookings' %}active{% endif %}">Hotel Bookings</a>
+    {% elif request.user.staff_profile.role == 'event' %}
+    <a href="{% url 'staff_bookings' %}" class="nav-item {% if active == 'bookings' %}active{% endif %}">Event Bookings</a>
+    {% endif %}
+  </nav>
+  <div class="panel-drawer-footer">
+    <form method="post" action="{% url 'logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="sidebar-logout">Logout</button>
+    </form>
+  </div>
+</div>
+<div class="panel-drawer-overlay" id="panelOverlay" onclick="closeDrawer()"></div>
+
+<div class="admin-layout">
+
+  <!-- DESKTOP SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="sidebar-logo-text">Iligan <em>Tourism</em></span>
+      <span class="sidebar-role">
+        {% if request.user.staff_profile.role == 'attraction' %}Attraction Staff
+        {% elif request.user.staff_profile.role == 'hotel' %}Hotel Staff
+        {% elif request.user.staff_profile.role == 'event' %}Event Staff
+        {% endif %}
+      </span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="staff-assigned-box">
+        <div class="staff-assigned-label">Assigned to</div>
+        <div class="staff-assigned-name">{{ request.user.staff_profile.get_assigned_name }}</div>
+      </div>
+      <a href="{% url 'staff_dashboard' %}" class="nav-item {% if active == 'dashboard' %}active{% endif %}">
+        <span class="nav-icon">&#9632;</span>Dashboard
+      </a>
+      {% if request.user.staff_profile.role == 'attraction' %}
+      <a href="{% url 'staff_bookings' %}" class="nav-item {% if active == 'bookings' %}active{% endif %}">
+        <span class="nav-icon">&#9632;</span>Service Bookings
+      </a>
+      {% elif request.user.staff_profile.role == 'hotel' %}
+      <a href="{% url 'staff_bookings' %}" class="nav-item {% if active == 'bookings' %}active{% endif %}">
+        <span class="nav-icon">&#9632;</span>Hotel Bookings
+      </a>
+      {% elif request.user.staff_profile.role == 'event' %}
+      <a href="{% url 'staff_bookings' %}" class="nav-item {% if active == 'bookings' %}active{% endif %}">
+        <span class="nav-icon">&#9632;</span>Event Bookings
+      </a>
+      {% endif %}
+    </nav>
+    <div class="sidebar-footer">
+      <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="sidebar-logout">Logout</button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <div class="topbar-left">
+        <button class="panel-burger" id="panelBurger" onclick="openDrawer()">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="topbar-title">{% block page_title %}Dashboard{% endblock %}</div>
+      </div>
+      <div class="topbar-user">
+        <strong>{{ request.user.username }}</strong> — {{ request.user.staff_profile.get_assigned_name }}
+      </div>
+    </div>
+
+    {% if messages %}
+    <div class="admin-messages">
+      {% for m in messages %}
+      <div class="admin-alert admin-alert-{{ m.tags }}">{{ m }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="admin-content">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+</div>
+
+<script>
+function openDrawer() {
+  document.getElementById('panelDrawer').classList.add('open');
+  document.getElementById('panelOverlay').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('panelDrawer').classList.remove('open');
+  document.getElementById('panelOverlay').classList.remove('open');
+}
+document.querySelectorAll('.panel-drawer-nav a').forEach(function(a) {
+  a.addEventListener('click', closeDrawer);
+});
+</script>
+
+</body>
+</html>

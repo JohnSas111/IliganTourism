@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Book Ticket — Iligan Tourism{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/book_event.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<section class="section">
+  <div class="form-card">
+    <div class="sec-tag">Book a Ticket</div>
+    <div class="form-title">{{ event.name }}</div>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span>Date</span>
+        <span>{{ event.date|date:"F j, Y" }}</span>
+      </div>
+      {% if event.time %}
+      <div class="info-row">
+        <span>Time</span>
+        <span>{{ event.time|time:"g:i A" }}</span>
+      </div>
+      {% endif %}
+      <div class="info-row">
+        <span>Location</span>
+        <span>{{ event.location }}</span>
+      </div>
+      <div class="info-row">
+        <span>Price</span>
+        <strong>PHP {{ event.ticket_price }} per ticket</strong>
+      </div>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Number of Tickets</label>
+        <input type="number" name="num_tickets" min="1" max="10" value="1" required>
+      </div>
+      <button type="submit" class="btn-gold btn-full">Confirm Booking</button>
+    </form>
+
+    <div class="back-link-row">
+      <a href="{% url 'event_detail' event.pk %}" class="btn-ghost" style="display:block;text-align:center;margin-top:0.75rem;">← Back to Event</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

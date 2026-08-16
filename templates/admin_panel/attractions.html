@@ -1,0 +1,55 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Attractions{% endblock %}
+{% block page_title %}Attractions{% endblock %}
+
+{% block content %}
+
+<div class="section-header">
+  <div class="section-title">Manage <em>Attractions</em></div>
+  <a href="{% url 'admin_attraction_add' %}" class="btn-primary">+ Add Attraction</a>
+</div>
+
+<div class="admin-table-wrap">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Image</th>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Location</th>
+        <th>Entrance Fee</th>
+        <th>Featured</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in attractions %}
+      <tr>
+        <td>
+          {% if a.image %}
+          <img src="{{ a.image.url }}" alt="{{ a.name }}" class="table-thumb">
+          {% else %}
+          <div class="table-thumb-placeholder">No img</div>
+          {% endif %}
+        </td>
+        <td>{{ a.name }}</td>
+        <td>{% if a.category %}{{ a.category.name }}{% else %}—{% endif %}</td>
+        <td>{{ a.location }}</td>
+        <td>{% if a.entrance_fee > 0 %}PHP {{ a.entrance_fee }}{% else %}Free{% endif %}</td>
+        <td>{% if a.is_featured %}<span class="featured-badge">Featured</span>{% else %}—{% endif %}</td>
+        <td>
+          <div class="td-actions">
+            <a href="{% url 'admin_attraction_edit' a.pk %}" class="btn-edit">Edit</a>
+            <a href="{% url 'admin_attraction_delete' a.pk %}" class="btn-danger">Delete</a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="empty-state">No attractions yet. Add one above.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

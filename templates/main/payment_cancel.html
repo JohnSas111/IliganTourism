@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment Cancelled — Iligan Tourism{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/payment.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="payment-result-card">
+    <div class="payment-icon payment-icon-cancel">&#10007;</div>
+    <h1 class="payment-title">Payment <em>Cancelled</em></h1>
+    <p class="payment-sub">Your payment was cancelled and no booking was made. You can try again anytime.</p>
+    <div class="payment-actions">
+      <a href="{% url 'home' %}" class="btn-gold" style="display:inline-block;padding:0.85rem 2rem;border-radius:50px;text-decoration:none;font-weight:600;">Back to Home</a>
+      <a href="{% url 'attractions' %}" class="btn-ghost" style="display:inline-block;padding:0.85rem 2rem;border-radius:50px;text-decoration:none;">Browse Attractions</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

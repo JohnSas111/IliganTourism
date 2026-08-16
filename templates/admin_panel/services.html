@@ -1,0 +1,47 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}Attraction Services{% endblock %}
+{% block page_title %}Attraction Services{% endblock %}
+{% block content %}
+
+<div class="section-header">
+  <div class="section-title">Attraction <em>Services</em></div>
+  <a href="{% url 'admin_service_add' %}" class="btn-primary">+ Add Service</a>
+</div>
+
+<div class="admin-table-wrap">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Attraction</th>
+        <th>Service Name</th>
+        <th>Type</th>
+        <th>Price</th>
+        <th>Capacity</th>
+        <th>Available</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in services %}
+      <tr>
+        <td>{{ s.attraction.name }}</td>
+        <td>{{ s.name }}</td>
+        <td>{{ s.get_service_type_display }}</td>
+        <td>PHP {{ s.price }}</td>
+        <td>{{ s.capacity }}</td>
+        <td>{% if s.is_available %}<span class="badge badge-active">Yes</span>{% else %}<span class="badge badge-inactive">No</span>{% endif %}</td>
+        <td>
+          <div class="td-actions">
+            <a href="{% url 'admin_service_edit' s.pk %}" class="btn-edit">Edit</a>
+            <a href="{% url 'admin_service_delete' s.pk %}" class="btn-danger">Delete</a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="empty-state">No services yet. Add one above.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
