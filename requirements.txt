@@ -1,2 +1,5 @@
-Django>=4.2
-Pillow>=9.0
+# Tested with Python 3.12 and 3.13 (Django 6.x requires Python 3.12+).
+# If your PythonAnywhere virtualenv uses Python 3.10/3.11, use: Django>=5.2,<5.3
+Django==6.1.2
+Pillow==12.3.0
+python-decouple==3.8

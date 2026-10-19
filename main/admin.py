@@ -3,7 +3,7 @@ from .models import (
     Category, Attraction, AttractionService, ServiceBooking, AttractionReview,
     Event, EventBooking, EventReview,
     Hotel, Room, HotelBooking, HotelReview,
-    Contact,
+    Contact, Payment, Staff,
 )
 
 @admin.register(Category)
@@ -95,3 +95,21 @@ class EventReviewAdmin(admin.ModelAdmin):
 class ContactAdmin(admin.ModelAdmin):
     list_display  = ['name', 'email', 'created_at']
     readonly_fields = ['name', 'email', 'message', 'created_at']
+
+
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'user', 'booking_type', 'amount', 'status', 'has_booking', 'created_at']
+    list_filter   = ['status', 'booking_type']
+    search_fields = ['user__username', 'paymongo_session_id']
+
+    @admin.display(boolean=True, description='Booking created')
+    def has_booking(self, obj):
+        # A payment that is 'paid' but has NO booking needs a refund or manual rebooking.
+        return bool(obj.hotel_booking_id or obj.event_booking_id or obj.service_booking_id)
+
+
+@admin.register(Staff)
+class StaffAdmin(admin.ModelAdmin):
+    list_display = ['user', 'role', 'attraction', 'hotel', 'event']
+    list_filter  = ['role']

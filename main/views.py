@@ -7,8 +7,12 @@ from django import forms
 from django.contrib import messages
 from django.utils import timezone
 from django.core.paginator import Paginator
-from django.db import models
-import random, string
+from django.db import models, transaction
+from django.http import JsonResponse
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_GET, require_POST
+import logging
+import random, re, string
 
 def _generate_reference(prefix):
     chars = string.ascii_uppercase + string.digits
