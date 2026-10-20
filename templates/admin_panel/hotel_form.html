@@ -26,6 +26,8 @@
           <input type="text" name="address" value="{{ hotel.address|default:'' }}" required placeholder="Full address">
         </div>
 
+        {% include 'admin_panel/_coordinates_fields.html' with obj=hotel %}
+
         <div class="form-group">
           <label>Phone</label>
           <input type="text" name="phone" value="{{ hotel.phone|default:'' }}" placeholder="e.g. 0917-XXX-XXXX">

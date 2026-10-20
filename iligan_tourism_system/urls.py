@@ -34,6 +34,8 @@ urlpatterns = [
 
     # Contact
     path('contact/',                               views.contact,           name='contact'),
+    path('api/weather/<str:kind>/<int:pk>/',       views.weather_api,       name='weather_api'),
+    path('assistant/ask/',                         views.assistant_ask,     name='assistant_ask'),
 
     # Payment
     path('payment/checkout/',                      views.payment_checkout,  name='payment_checkout'),

@@ -1,0 +1,36 @@
+{% load l10n %} {% comment %} Latitude/longitude inputs for the attraction,
+hotel and event forms. Include with: {% include
+'admin_panel/_coordinates_fields.html' with obj=attraction %} {% endcomment %}
+<div class="form-group">
+  <label>Latitude (map)</label>
+  <input
+    type="text"
+    name="latitude"
+    value="{% if obj.latitude is not None %}{{ obj.latitude|unlocalize }}{% endif %}"
+    placeholder="e.g. 8.228000"
+    inputmode="decimal"
+    autocomplete="off"
+  />
+</div>
+
+<div class="form-group">
+  <label>Longitude (map)</label>
+  <input
+    type="text"
+    name="longitude"
+    value="{% if obj.longitude is not None %}{{ obj.longitude|unlocalize }}{% endif %}"
+    placeholder="e.g. 124.245000"
+    inputmode="decimal"
+    autocomplete="off"
+  />
+</div>
+
+<div class="form-group span-2">
+  <small style="color: rgba(255, 255, 255, 0.5)">
+    Leave both blank and save to find the map location automatically from the
+    address. To correct a wrong pin, enter the numbers yourself. On Google Maps,
+    right-click the spot and click the numbers at the top of the menu to copy
+    them, then paste that whole text (like <em>8.1832, 124.1951</em>) into the
+    Latitude box. Longitude fills in automatically.
+  </small>
+</div>

@@ -55,6 +55,8 @@
       </div>
     </div>
 
+    {% include 'main/_location_weather.html' with obj=attraction kind='attraction' %}
+
     {% if services_by_type %}
     <div class="services-wrap">
       <div class="sec-tag">Available Services</div>

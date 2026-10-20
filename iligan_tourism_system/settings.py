@@ -67,6 +67,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'main.context_processors.assistant',
             ],
         },
     },
@@ -124,6 +125,24 @@ PAYMONGO_PUBLIC_KEY  = config('PAYMONGO_PUBLIC_KEY', default='')
 # Remove the fallback once PythonAnywhere has been updated.
 PAYMONGO_SECRET_KEY  = config('PAYMONGO_SECRET_KEY', default='') or config('SECRET_KEY', default='')
 PAYMONGO_API_URL     = 'https://api.paymongo.com/v1'
+
+# ── Maps & weather (OpenStreetMap Nominatim + Open-Meteo; no API keys needed) ──
+# Nominatim's usage policy asks you to identify your app. Put a contact email in .env.
+GEO_USER_AGENT = config('GEO_USER_AGENT', default='IliganTourismSystem/1.0 (student project)')
+
+# ── AI tourism assistant (Google Gemini) ──
+# Get a free key at https://aistudio.google.com/apikey and put it in .env. Never commit it.
+# Without a key the assistant button is simply hidden.
+GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
+# Model ID. 'gemini-flash-lite-latest' follows Google's newest Flash-Lite model. Check which
+# models your key can use (free-tier limits differ per model): https://aistudio.google.com/rate-limit
+GEMINI_MODEL = config('GEMINI_MODEL', default='gemini-flash-lite-latest')
+# Optional: minimal, low, medium or high. Leave blank to use the model's default.
+GEMINI_THINKING_LEVEL = config('GEMINI_THINKING_LEVEL', default='')
+# Protects the free quota: questions allowed per visitor per minute / per day, and for the whole site per day.
+ASSISTANT_PER_MINUTE = config('ASSISTANT_PER_MINUTE', default=6, cast=int)
+ASSISTANT_PER_DAY = config('ASSISTANT_PER_DAY', default=60, cast=int)
+ASSISTANT_SITE_PER_DAY = config('ASSISTANT_SITE_PER_DAY', default=300, cast=int)
 
 # The base URL of your site — used for PayMongo redirect after payment
 # Set SITE_URL in the environment when deploying, e.g. https://yourname.pythonanywhere.com

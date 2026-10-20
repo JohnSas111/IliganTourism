@@ -53,6 +53,8 @@
         <strong>{% if event.is_ticketed %}PHP {{ event.ticket_price }}{% else %}Free{% endif %}</strong>
       </div>
     </div>
+
+    {% include 'main/_location_weather.html' with obj=event kind='event' %}
   </div>
 
   <div class="detail-sidebar">

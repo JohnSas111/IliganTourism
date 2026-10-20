@@ -36,6 +36,8 @@
           <input type="text" name="location" value="{{ event.location|default:'' }}" required placeholder="e.g. Iligan City Hall Plaza">
         </div>
 
+        {% include 'admin_panel/_coordinates_fields.html' with obj=event %}
+
         <div class="form-group">
           <label>Image</label>
           <input type="file" name="image" accept="image/*">

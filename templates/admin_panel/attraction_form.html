@@ -31,6 +31,8 @@
           <input type="text" name="location" value="{{ attraction.location|default:'' }}" required placeholder="e.g. Iligan City">
         </div>
 
+        {% include 'admin_panel/_coordinates_fields.html' with obj=attraction %}
+
         <div class="form-group span-2">
           <label>Description</label>
           <textarea name="description" rows="4" placeholder="Describe the attraction...">{{ attraction.description|default:'' }}</textarea>

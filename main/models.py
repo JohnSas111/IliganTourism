@@ -17,6 +17,9 @@ class Attraction(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField()
     location = models.CharField(max_length=200)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True,
+                                   help_text='Map location. Leave blank to look it up automatically.')
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     image = models.ImageField(upload_to='attractions/', blank=True, null=True)
     opening_hours = models.CharField(max_length=200, blank=True)
     entrance_fee = models.DecimalField(max_digits=8, decimal_places=2, default=0)
@@ -97,6 +100,9 @@ class Event(models.Model):
     time = models.TimeField(blank=True, null=True, help_text='Event start time')
     image = models.ImageField(upload_to='events/', blank=True, null=True)
     location = models.CharField(max_length=200)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True,
+                                   help_text='Map location. Leave blank to look it up automatically.')
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     is_ticketed = models.BooleanField(default=False)
     ticket_price = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     ticket_capacity = models.IntegerField(default=0, help_text='0 = unlimited')
@@ -117,6 +123,7 @@ class EventBooking(models.Model):
         ('pending',   'Pending'),
         ('confirmed', 'Confirmed'),
         ('cancelled', 'Cancelled'),
+        ('completed', 'Completed'),
     ]
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
@@ -144,6 +151,9 @@ class Hotel(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField()
     address = models.CharField(max_length=200)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True,
+                                   help_text='Map location. Leave blank to look it up automatically.')
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     image = models.ImageField(upload_to='hotels/', blank=True, null=True)
     email = models.EmailField(blank=True)
     phone = models.CharField(max_length=20, blank=True)

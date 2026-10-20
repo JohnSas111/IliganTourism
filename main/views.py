@@ -17,12 +17,161 @@ import random, re, string
 def _generate_reference(prefix):
     chars = string.ascii_uppercase + string.digits
     return prefix + '-' + ''.join(random.choices(chars, k=8))
+from . import assistant, geo
 from .models import (
     Category, Attraction, AttractionService, ServiceBooking, AttractionReview,
     Event, EventBooking,
     Hotel, Room, HotelBooking, HotelReview,
     Contact
 )
+
+
+# ── Input validation helpers (Batch 2B) ──────────────────────────────────
+MAX_TICKETS_PER_BOOKING = 10   # matches the limit already shown on the booking form
+
+
+def _parse_int(value, minimum=1, maximum=None):
+    """Return an int within [minimum, maximum], or None if the input is not valid."""
+    try:
+        number = int(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+    if number < minimum or (maximum is not None and number > maximum):
+        return None
+    return number
+
+
+def _parse_date(value):
+    """Return a date from an ISO string (YYYY-MM-DD), or None if invalid."""
+    from datetime import date as date_type
+    try:
+        return date_type.fromisoformat(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _parse_time(value):
+    """Return (ok, value). Empty input is fine (None); otherwise it must be HH:MM."""
+    from datetime import time as time_type
+    if not value:
+        return True, None
+    try:
+        time_type.fromisoformat(str(value).strip())
+    except ValueError:
+        return False, None
+    return True, str(value).strip()
+
+
+# ── Maps & weather (Batch 3) ──────────────────────────────────────────────
+def _parse_coordinate(raw, limit):
+    """A Decimal within +/-limit rounded to 6 places, or None if it is not valid."""
+    from decimal import Decimal, InvalidOperation
+    try:
+        value = Decimal(str(raw).strip())
+    except InvalidOperation:
+        return None
+    if not value.is_finite() or abs(value) > limit:
+        return None
+    return value.quantize(Decimal('0.000001'))
+
+
+def _apply_coordinates(request, obj, search_texts):
+    """
+    Set obj.latitude/longitude from the admin form. If the admin left both blank,
+    try to find the place automatically using each wording in `search_texts`,
+    most specific first. Never blocks saving the record.
+    """
+    lat_raw = request.POST.get('latitude', '').strip()
+    lng_raw = request.POST.get('longitude', '').strip()
+    if lat_raw and not lng_raw:
+        # Google Maps copies both numbers as one text ("8.18, 124.19"); accept that pasted into Latitude.
+        pieces = [piece for piece in re.split(r'[,;\s]+', lat_raw) if piece]
+        if len(pieces) == 2:
+            lat_raw, lng_raw = pieces
+    if lat_raw or lng_raw:
+        lat, lng = _parse_coordinate(lat_raw, 90), _parse_coordinate(lng_raw, 180)
+        if lat is None or lng is None:
+            messages.warning(
+                request,
+                'The map coordinates were not saved. Latitude must be a number from -90 to 90 '
+                'and longitude a number from -180 to 180.')
+            return
+        obj.latitude, obj.longitude = lat, lng
+        return
+    obj.latitude = obj.longitude = None
+    found = geo.geocode_any(search_texts)
+    if found:
+        lat, lng = _parse_coordinate(found[0], 90), _parse_coordinate(found[1], 180)
+        if lat is not None and lng is not None:
+            obj.latitude, obj.longitude = lat, lng
+            messages.info(
+                request,
+                f'Map location found automatically by searching for "{found[2]}" ({lat}, {lng}). '
+                'Please check that the pin is correct.')
+            return
+    searched = '; '.join(f'"{text}"' for text in dict.fromkeys(t for t in search_texts if t))
+    messages.warning(
+        request,
+        f'Saved, but no map location could be found automatically (searched for: {searched}). '
+        'Edit it and enter the latitude and longitude yourself.')
+
+
+@require_GET
+def weather_api(request, kind, pk):
+    """JSON forecast for an attraction, hotel or event page (used by the page's weather box)."""
+    model = {'attraction': Attraction, 'hotel': Hotel, 'event': Event}.get(kind)
+    if model is None:
+        return JsonResponse({'ok': False, 'error': 'unknown_type'}, status=404)
+    obj = model.objects.filter(pk=pk).first()
+    if obj is None or obj.latitude is None or obj.longitude is None:
+        return JsonResponse({'ok': False, 'error': 'no_location'}, status=404)
+    forecast = geo.fetch_forecast(obj.latitude, obj.longitude)
+    if forecast is None:
+        return JsonResponse({'ok': False, 'error': 'unavailable'}, status=503)
+    if kind == 'event':
+        wanted = obj.date.isoformat()
+        match = next((day for day in forecast['days'] if day['date'] == wanted), None)
+        return JsonResponse({
+            'ok': True, 'current': forecast['current'],
+            'days': [match] if match else [],
+            'event_date': wanted, 'event_in_range': match is not None,
+        })
+    return JsonResponse({'ok': True, 'current': forecast['current'], 'days': forecast['days'][:7]})
+
+
+# ── AI tourism assistant (Batch 4) ────────────────────────────────────────
+def _assistant_reply(ok, status, **data):
+    return JsonResponse({'ok': ok, **data}, status=status)
+
+
+@never_cache
+@require_POST
+def assistant_ask(request):
+    """Answer a visitor's question with Gemini, using only public tourism data."""
+    try:
+        body = json.loads(request.body.decode('utf-8') or '{}')
+    except (ValueError, UnicodeDecodeError):
+        body = None
+    if not isinstance(body, dict):
+        return _assistant_reply(False, 400, error='bad_request', message='Please send your question as text.')
+    question = body.get('message')
+    if not isinstance(question, str) or not question.strip():
+        return _assistant_reply(False, 400, error='empty', message='Please type a question.')
+    if len(question) > assistant.MAX_QUESTION_CHARS:
+        return _assistant_reply(
+            False, 400, error='too_long',
+            message=f'Please keep your question under {assistant.MAX_QUESTION_CHARS} characters.')
+    history = body.get('history')
+    if not isinstance(history, list):
+        history = []
+    try:
+        if not settings.GEMINI_API_KEY:
+            raise assistant.AssistantError('not_configured')
+        assistant.check_rate_limit(assistant.client_key(request))
+        answer = assistant.answer_question(question, history)
+    except assistant.AssistantError as problem:
+        return _assistant_reply(False, problem.status, error=problem.code, message=problem.message)
+    return _assistant_reply(True, 200, answer=answer)
 
 
 class RegisterForm(UserCreationForm):
@@ -97,17 +246,18 @@ def attraction_detail(request, pk):
         if not user_has_booked:
             messages.error(request, 'You must have booked a service at this attraction to leave a review.')
             return redirect('attraction_detail', pk=pk)
-        rating  = request.POST.get('rating')
+        rating  = _parse_int(request.POST.get('rating'), minimum=1, maximum=5)
         comment = request.POST.get('comment', '').strip()
         if rating and comment:
             AttractionReview.objects.create(
                 attraction=attraction,
                 user=request.user,
-                rating=int(rating),
+                rating=rating,
                 comment=comment,
             )
             messages.success(request, 'Review submitted!')
             return redirect('attraction_detail', pk=pk)
+        messages.error(request, 'Please choose a rating from 1 to 5 and write a comment.')
 
     return render(request, 'main/attraction_detail.html', {
         'attraction':       attraction,
@@ -123,13 +273,21 @@ def book_service(request, service_id):
     service = get_object_or_404(AttractionService, pk=service_id, is_available=True)
     today = date_type.today().isoformat()
     if request.method == 'POST':
-        visit_date  = request.POST.get('visit_date')
-        num_guests  = int(request.POST.get('num_guests', 1))
-        notes       = request.POST.get('notes', '')
-        total_price = service.price * num_guests
-        if date_type.fromisoformat(visit_date) < date_type.today():
+        visit_date_value = _parse_date(request.POST.get('visit_date'))
+        max_guests       = max(service.capacity, 1)
+        num_guests       = _parse_int(request.POST.get('num_guests', 1), minimum=1, maximum=max_guests)
+        notes            = request.POST.get('notes', '')
+        if visit_date_value is None:
+            messages.error(request, 'Please choose a valid visit date.')
+            return render(request, 'main/book_service.html', {'service': service, 'today': today})
+        if visit_date_value < date_type.today():
             messages.error(request, 'Visit date cannot be in the past.')
             return render(request, 'main/book_service.html', {'service': service, 'today': today})
+        if num_guests is None:
+            messages.error(request, f'Number of guests must be a whole number from 1 to {max_guests}.')
+            return render(request, 'main/book_service.html', {'service': service, 'today': today})
+        visit_date  = visit_date_value.isoformat()
+        total_price = service.price * num_guests
         request.session['pending_booking'] = {
             'type':        'service',
             'service_id':  service_id,
@@ -169,11 +327,14 @@ def book_event(request, event_id):
     from datetime import date as date_type
     event = get_object_or_404(Event, pk=event_id, is_ticketed=True)
     if request.method == 'POST':
-        num_tickets = int(request.POST.get('num_tickets', 1))
-        total_price = event.ticket_price * num_tickets
+        num_tickets = _parse_int(request.POST.get('num_tickets', 1), minimum=1, maximum=MAX_TICKETS_PER_BOOKING)
         if event.date < date_type.today():
             messages.error(request, 'This event has already passed.')
             return render(request, 'main/book_event.html', {'event': event})
+        if num_tickets is None:
+            messages.error(request, f'Number of tickets must be a whole number from 1 to {MAX_TICKETS_PER_BOOKING}.')
+            return render(request, 'main/book_event.html', {'event': event})
+        total_price = event.ticket_price * num_tickets
         # Check capacity
         if event.ticket_capacity > 0:
             booked = EventBooking.objects.filter(
@@ -246,12 +407,18 @@ def book_room(request, room_id):
     tomorrow = today + timedelta(days=1)
     ctx = {'room': room, 'today': today.isoformat(), 'tomorrow': tomorrow.isoformat()}
     if request.method == 'POST':
-        check_in       = request.POST.get('check_in')
-        check_out      = request.POST.get('check_out')
-        check_in_time  = request.POST.get('check_in_time') or None
-        check_out_time = request.POST.get('check_out_time') or None
-        check_in_date  = date_type.fromisoformat(check_in)
-        check_out_date = date_type.fromisoformat(check_out)
+        check_in_date  = _parse_date(request.POST.get('check_in'))
+        check_out_date = _parse_date(request.POST.get('check_out'))
+        if check_in_date is None or check_out_date is None:
+            messages.error(request, 'Please choose valid check-in and check-out dates.')
+            return render(request, 'main/book_room.html', ctx)
+        times_ok_in,  check_in_time  = _parse_time(request.POST.get('check_in_time'))
+        times_ok_out, check_out_time = _parse_time(request.POST.get('check_out_time'))
+        if not (times_ok_in and times_ok_out):
+            messages.error(request, 'Please enter valid check-in and check-out times.')
+            return render(request, 'main/book_room.html', ctx)
+        check_in  = check_in_date.isoformat()
+        check_out = check_out_date.isoformat()
         if check_in_date < today:
             messages.error(request, 'Check-in date cannot be in the past.')
             return render(request, 'main/book_room.html', ctx)
@@ -333,20 +500,42 @@ def _is_within_cancel_window(booking):
     return timezone.now() <= deadline
 
 
-@login_required
-def cancel_hotel_booking(request, pk):
-    if request.method != 'POST':
-        return redirect('my_bookings')
-    booking = get_object_or_404(HotelBooking, pk=pk, user=request.user)
-    if booking.status not in ('confirmed', 'pending', 'completed'):
+def _booking_start_date(booking):
+    """The date the customer's visit starts."""
+    if isinstance(booking, HotelBooking):
+        return booking.check_in
+    if isinstance(booking, EventBooking):
+        return booking.event.date
+    return booking.visit_date
+
+
+def _cancel_booking(request, booking, label):
+    """Shared cancellation rules for hotel, event and service bookings."""
+    from datetime import date as date_type
+    if booking.status not in ('confirmed', 'pending'):
         messages.error(request, 'This booking cannot be cancelled.')
+    elif _booking_start_date(booking) < date_type.today():
+        messages.error(request, 'This booking date has already passed, so it can no longer be cancelled.')
     elif not _is_within_cancel_window(booking):
         messages.error(request, f'Cancellation window has passed. Bookings can only be cancelled within {CANCEL_WINDOW_HOURS} hours of booking.')
     else:
         booking.status = 'cancelled'
         booking.save()
-        messages.success(request, 'Hotel booking cancelled successfully. Refunds are processed within 3–5 business days.')
+        # NOTE: no automatic refund is issued by this system. Refunds are handled by staff.
+        messages.success(
+            request,
+            f'{label} booking cancelled. Refunds are reviewed and processed by our team. '
+            f'Please contact us and quote reference {booking.reference_number}.'
+        )
     return redirect('my_bookings')
+
+
+@login_required
+def cancel_hotel_booking(request, pk):
+    if request.method != 'POST':
+        return redirect('my_bookings')
+    booking = get_object_or_404(HotelBooking, pk=pk, user=request.user)
+    return _cancel_booking(request, booking, 'Hotel')
 
 
 @login_required
@@ -354,15 +543,7 @@ def cancel_event_booking(request, pk):
     if request.method != 'POST':
         return redirect('my_bookings')
     booking = get_object_or_404(EventBooking, pk=pk, user=request.user)
-    if booking.status not in ('confirmed', 'pending', 'completed'):
-        messages.error(request, 'This booking cannot be cancelled.')
-    elif not _is_within_cancel_window(booking):
-        messages.error(request, f'Cancellation window has passed. Bookings can only be cancelled within {CANCEL_WINDOW_HOURS} hours of booking.')
-    else:
-        booking.status = 'cancelled'
-        booking.save()
-        messages.success(request, 'Event booking cancelled successfully. Refunds are processed within 3–5 business days.')
-    return redirect('my_bookings')
+    return _cancel_booking(request, booking, 'Event')
 
 
 @login_required
@@ -370,15 +551,7 @@ def cancel_service_booking(request, pk):
     if request.method != 'POST':
         return redirect('my_bookings')
     booking = get_object_or_404(ServiceBooking, pk=pk, user=request.user)
-    if booking.status not in ('confirmed', 'pending', 'completed'):
-        messages.error(request, 'This booking cannot be cancelled.')
-    elif not _is_within_cancel_window(booking):
-        messages.error(request, f'Cancellation window has passed. Bookings can only be cancelled within {CANCEL_WINDOW_HOURS} hours of booking.')
-    else:
-        booking.status = 'cancelled'
-        booking.save()
-        messages.success(request, 'Attraction service booking cancelled successfully. Refunds are processed within 3–5 business days.')
-    return redirect('my_bookings')
+    return _cancel_booking(request, booking, 'Attraction service')
 
 
 # ── AUTH ──────────────────────────────────────────
@@ -499,6 +672,7 @@ def admin_attraction_add(request):
             a.category_id = cat_id
         if 'image' in request.FILES:
             a.image = request.FILES['image']
+        _apply_coordinates(request, a, [f'{a.name}, {a.location}', a.name, a.location])
         a.save()
         messages.success(request, f'Attraction "{a.name}" added successfully.')
         return redirect('admin_attractions')
@@ -521,6 +695,7 @@ def admin_attraction_edit(request, pk):
         a.category_id = cat_id if cat_id else None
         if 'image' in request.FILES:
             a.image = request.FILES['image']
+        _apply_coordinates(request, a, [f'{a.name}, {a.location}', a.name, a.location])
         a.save()
         messages.success(request, f'Attraction "{a.name}" updated.')
         return redirect('admin_attractions')
@@ -568,6 +743,7 @@ def admin_hotel_add(request):
         )
         if 'image' in request.FILES:
             h.image = request.FILES['image']
+        _apply_coordinates(request, h, [f'{h.name}, {h.address}', h.name, h.address])
         h.save()
         messages.success(request, f'Hotel "{h.name}" added successfully.')
         return redirect('admin_hotels')
@@ -586,6 +762,7 @@ def admin_hotel_edit(request, pk):
         h.is_active   = 'is_active' in request.POST
         if 'image' in request.FILES:
             h.image = request.FILES['image']
+        _apply_coordinates(request, h, [f'{h.name}, {h.address}', h.name, h.address])
         h.save()
         messages.success(request, f'Hotel "{h.name}" updated.')
         return redirect('admin_hotels')
@@ -630,6 +807,7 @@ def admin_event_add(request):
         )
         if 'image' in request.FILES:
             e.image = request.FILES['image']
+        _apply_coordinates(request, e, [e.location])
         e.save()
         messages.success(request, f'Event "{e.name}" added successfully.')
         return redirect('admin_events')
@@ -649,6 +827,7 @@ def admin_event_edit(request, pk):
         e.ticket_capacity = request.POST.get('ticket_capacity', 0)
         if 'image' in request.FILES:
             e.image = request.FILES['image']
+        _apply_coordinates(request, e, [e.location])
         e.save()
         messages.success(request, f'Event "{e.name}" updated.')
         return redirect('admin_events')
@@ -690,13 +869,24 @@ def admin_hotel_bookings(request):
         'search':   search,
     })
 
+def _set_booking_status(request, booking, model_class):
+    """Update a booking's status, accepting only values the model defines."""
+    new_status = request.POST.get('status', '')
+    valid = {value for value, _label in model_class._meta.get_field('status').choices}
+    if new_status not in valid:
+        messages.error(request, 'Invalid booking status.')
+        return False
+    booking.status = new_status
+    booking.save()
+    messages.success(request, 'Booking status updated.')
+    return True
+
+
 @staff_required
 def admin_update_hotel_booking(request, pk):
     b = get_object_or_404(HotelBooking, pk=pk)
     if request.method == 'POST':
-        b.status = request.POST.get('status', b.status)
-        b.save()
-        messages.success(request, 'Booking status updated.')
+        _set_booking_status(request, b, HotelBooking)
     return redirect('admin_hotel_bookings')
 
 @staff_required
@@ -721,9 +911,7 @@ def admin_event_bookings(request):
 def admin_update_event_booking(request, pk):
     b = get_object_or_404(EventBooking, pk=pk)
     if request.method == 'POST':
-        b.status = request.POST.get('status', b.status)
-        b.save()
-        messages.success(request, 'Booking status updated.')
+        _set_booking_status(request, b, EventBooking)
     return redirect('admin_event_bookings')
 
 @staff_required
@@ -749,9 +937,7 @@ def admin_service_bookings(request):
 def admin_update_service_booking(request, pk):
     b = get_object_or_404(ServiceBooking, pk=pk)
     if request.method == 'POST':
-        b.status = request.POST.get('status', b.status)
-        b.save()
-        messages.success(request, 'Booking status updated.')
+        _set_booking_status(request, b, ServiceBooking)
     return redirect('admin_service_bookings')
 
 
@@ -996,6 +1182,10 @@ def payment_checkout(request):
         return redirect('home')
 
     total_price  = Decimal(data['total_price'])
+    if total_price <= 0:
+        request.session.pop('pending_booking', None)
+        messages.error(request, 'This booking has no payable amount, so it cannot be paid online. Please contact us.')
+        return redirect('my_bookings')
     description  = _get_booking_description(data)
     amount_cents = int(total_price * 100)  # PayMongo uses centavos
 
@@ -1058,13 +1248,94 @@ def payment_checkout(request):
         error_body = e.read().decode()
         import logging
         logging.error(f'PayMongo HTTPError: {e.code} — {error_body}')
-        messages.error(request, f'Payment setup failed: {error_body}')
+        messages.error(request, 'We could not start the payment. Please try again in a moment.')
         return redirect('my_bookings')
     except Exception as e:
         import logging
         logging.error(f'PayMongo Exception: {str(e)}')
-        messages.error(request, f'Payment setup failed: {str(e)}')
+        messages.error(request, 'We could not start the payment. Please try again in a moment.')
         return redirect('my_bookings')
+
+
+class BookingUnavailable(Exception):
+    """Raised when a paid-for booking can no longer be fulfilled."""
+
+
+def _create_booking_from_payment(payment, user):
+    """
+    Create the booking for a paid Payment and link it to the payment.
+    Call inside transaction.atomic(). Availability is re-checked here because it
+    may have changed while the customer was on the PayMongo page.
+    """
+    from datetime import date as date_type
+    data = payment.booking_data
+
+    if data['type'] == 'hotel':
+        check_in  = date_type.fromisoformat(data['check_in'])
+        check_out = date_type.fromisoformat(data['check_out'])
+        if not Room.objects.filter(pk=data['room_id'], is_available=True).exists():
+            raise BookingUnavailable('this room is no longer available.')
+        if HotelBooking.objects.filter(
+            room_id=data['room_id'], status__in=('confirmed', 'pending'),
+            check_in__lt=check_out, check_out__gt=check_in,
+        ).exists():
+            raise BookingUnavailable('this room was booked by someone else for those dates.')
+        ref = _generate_reference('HTL')
+        while HotelBooking.objects.filter(reference_number=ref).exists():
+            ref = _generate_reference('HTL')
+        booking = HotelBooking.objects.create(
+            user=user,
+            room_id=data['room_id'],
+            check_in=data['check_in'],
+            check_in_time=data.get('check_in_time'),
+            check_out=data['check_out'],
+            check_out_time=data.get('check_out_time'),
+            total_price=Decimal(data['total_price']),
+            status='confirmed',
+            reference_number=ref,
+        )
+        payment.hotel_booking = booking
+
+    elif data['type'] == 'event':
+        event = Event.objects.filter(pk=data['event_id']).first()
+        if event is None:
+            raise BookingUnavailable('this event is no longer available.')
+        if event.ticket_capacity > 0:
+            booked = EventBooking.objects.filter(
+                event=event, status__in=('confirmed', 'pending')
+            ).aggregate(total=models.Sum('num_tickets'))['total'] or 0
+            if booked + data['num_tickets'] > event.ticket_capacity:
+                raise BookingUnavailable('there are not enough tickets left for this event.')
+        ref = _generate_reference('EVT')
+        while EventBooking.objects.filter(reference_number=ref).exists():
+            ref = _generate_reference('EVT')
+        booking = EventBooking.objects.create(
+            user=user,
+            event_id=data['event_id'],
+            num_tickets=data['num_tickets'],
+            total_price=Decimal(data['total_price']),
+            status='confirmed',
+            reference_number=ref,
+        )
+        payment.event_booking = booking
+
+    elif data['type'] == 'service':
+        if not AttractionService.objects.filter(pk=data['service_id'], is_available=True).exists():
+            raise BookingUnavailable('this service is no longer available.')
+        ref = _generate_reference('SVC')
+        while ServiceBooking.objects.filter(reference_number=ref).exists():
+            ref = _generate_reference('SVC')
+        booking = ServiceBooking.objects.create(
+            user=user,
+            service_id=data['service_id'],
+            visit_date=data['visit_date'],
+            num_guests=data['num_guests'],
+            notes=data.get('notes', ''),
+            total_price=Decimal(data['total_price']),
+            status='confirmed',
+            reference_number=ref,
+        )
+        payment.service_booking = booking
 
 
 @login_required
@@ -1093,58 +1364,28 @@ def payment_success(request):
         paid = payment.status == 'paid'
 
     if paid and payment.status != 'paid':
-        payment.status = 'paid'
-        data = payment.booking_data
-
-        # Create the actual booking now that payment is confirmed
-        if data['type'] == 'hotel':
-            ref = _generate_reference('HTL')
-            while HotelBooking.objects.filter(reference_number=ref).exists():
-                ref = _generate_reference('HTL')
-            booking = HotelBooking.objects.create(
-                user=request.user,
-                room_id=data['room_id'],
-                check_in=data['check_in'],
-                check_in_time=data.get('check_in_time'),
-                check_out=data['check_out'],
-                check_out_time=data.get('check_out_time'),
-                total_price=Decimal(data['total_price']),
-                status='confirmed',
-                reference_number=ref,
+        try:
+            with transaction.atomic():
+                # Re-read the payment inside the transaction so that two simultaneous
+                # requests cannot both create a booking for the same payment.
+                payment = Payment.objects.select_for_update().get(pk=payment.pk, user=request.user)
+                if payment.status != 'paid':
+                    _create_booking_from_payment(payment, request.user)
+                    payment.status = 'paid'
+                    payment.save()
+        except BookingUnavailable as reason:
+            # The customer HAS paid, but the room/tickets were taken while they were paying.
+            # Record the payment so staff can see it in the admin and arrange a refund.
+            Payment.objects.filter(pk=payment.pk).update(status='paid')
+            logging.error(f'Paid but not fulfilled: payment {payment.pk} ({reason})')
+            request.session.pop('pending_booking', None)
+            request.session.pop('payment_id', None)
+            messages.error(
+                request,
+                f'Your payment was received, but we could not complete your booking: {reason} '
+                f'Please contact us with payment reference PAY-{payment.pk} so we can refund or rebook you.'
             )
-            payment.hotel_booking = booking
-
-        elif data['type'] == 'event':
-            ref = _generate_reference('EVT')
-            while EventBooking.objects.filter(reference_number=ref).exists():
-                ref = _generate_reference('EVT')
-            booking = EventBooking.objects.create(
-                user=request.user,
-                event_id=data['event_id'],
-                num_tickets=data['num_tickets'],
-                total_price=Decimal(data['total_price']),
-                status='confirmed',
-                reference_number=ref,
-            )
-            payment.event_booking = booking
-
-        elif data['type'] == 'service':
-            ref = _generate_reference('SVC')
-            while ServiceBooking.objects.filter(reference_number=ref).exists():
-                ref = _generate_reference('SVC')
-            booking = ServiceBooking.objects.create(
-                user=request.user,
-                service_id=data['service_id'],
-                visit_date=data['visit_date'],
-                num_guests=data['num_guests'],
-                notes=data.get('notes', ''),
-                total_price=Decimal(data['total_price']),
-                status='confirmed',
-                reference_number=ref,
-            )
-            payment.service_booking = booking
-
-        payment.save()
+            return redirect('my_bookings')
         # Clear session
         request.session.pop('pending_booking', None)
         request.session.pop('payment_id', None)
@@ -1275,6 +1516,17 @@ def staff_bookings(request):
     })
 
 
+def _staff_manages(staff, booking_type, booking):
+    """True only if the booking belongs to the staff member's assigned location."""
+    if staff.role == 'attraction' and staff.attraction_id:
+        return booking_type == 'service' and booking.service.attraction_id == staff.attraction_id
+    if staff.role == 'hotel' and staff.hotel_id:
+        return booking_type == 'hotel' and booking.room.hotel_id == staff.hotel_id
+    if staff.role == 'event' and staff.event_id:
+        return booking_type == 'event' and booking.event_id == staff.event_id
+    return False
+
+
 @staff_member_required
 def staff_complete_booking(request, booking_type, pk):
     if request.method == 'POST':
@@ -1286,6 +1538,9 @@ def staff_complete_booking(request, booking_type, pk):
             b = get_object_or_404(ServiceBooking, pk=pk)
         else:
             return redirect('staff_dashboard')
+        if not _staff_manages(request.user.staff_profile, booking_type, b):
+            messages.error(request, 'You can only manage bookings for your assigned location.')
+            return redirect('staff_bookings')
         if b.status == 'confirmed':
             b.status = 'completed'
             b.save()

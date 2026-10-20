@@ -1,0 +1,177 @@
+{% comment %}
+  Floating "Ask Iligan" chat box. Included once, at the end of templates/base.html.
+  Only appears when a Gemini key is configured (assistant_enabled comes from main/context_processors.py).
+  The API key is never in this page: the browser talks to our own /assistant/ask/ endpoint.
+{% endcomment %}
+{% if assistant_enabled %}
+<div id="aiAssistant" class="ai-assist" data-url="{% url 'assistant_ask' %}" data-csrf="{{ csrf_token }}">
+  <button type="button" id="aiToggle" class="ai-toggle" aria-expanded="false" aria-controls="aiPanel">
+    <span aria-hidden="true">💬</span> Ask Iligan
+  </button>
+
+  <section id="aiPanel" class="ai-panel" aria-label="Iligan tourism assistant" hidden>
+    <header class="ai-head">
+      <strong>Ask about Iligan</strong>
+      <button type="button" id="aiClose" class="ai-close" aria-label="Close assistant">&times;</button>
+    </header>
+
+    <div id="aiLog" class="ai-log" role="log" aria-live="polite"></div>
+
+    <div id="aiChips" class="ai-chips">
+      <button type="button" class="ai-chip">What can I do in Iligan?</button>
+      <button type="button" class="ai-chip">Any upcoming events?</button>
+      <button type="button" class="ai-chip">Where can I stay?</button>
+    </div>
+
+    <form id="aiForm" class="ai-form" autocomplete="off">
+      <input id="aiInput" type="text" maxlength="500" placeholder="Type your question…" aria-label="Your question">
+      <button type="submit" id="aiSend" class="ai-send">Send</button>
+    </form>
+    <p class="ai-note">AI can make mistakes, so please check details on the page. Don't share personal information.</p>
+  </section>
+</div>
+
+<style>
+  .ai-assist { position: fixed; right: 1rem; bottom: 1rem; z-index: 2000; font-family: inherit; }
+  .ai-toggle { padding: 0.7rem 1.1rem; border: 0; border-radius: 999px; cursor: pointer; font: inherit; font-weight: 600;
+    background: var(--gold, #c8a84b); color: #14202b; box-shadow: 0 6px 20px rgba(0,0,0,0.35); }
+  .ai-toggle:hover { filter: brightness(1.08); }
+  .ai-panel { position: absolute; right: 0; bottom: 3.4rem; width: min(370px, 92vw); height: min(540px, 72vh);
+    display: flex; flex-direction: column; border-radius: 14px; overflow: hidden;
+    background: #14202b; color: #f2f2f2; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
+  .ai-panel[hidden] { display: none; }
+  .ai-head { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem 0.9rem;
+    background: rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .ai-close { background: none; border: 0; color: inherit; font-size: 1.5rem; line-height: 1; cursor: pointer; }
+  .ai-log { flex: 1; overflow-y: auto; padding: 0.8rem; display: flex; flex-direction: column; gap: 0.5rem; }
+  .ai-msg { max-width: 88%; padding: 0.55rem 0.75rem; border-radius: 12px; font-size: 0.9rem; line-height: 1.45;
+    white-space: pre-wrap; overflow-wrap: anywhere; }
+  .ai-msg.user { align-self: flex-end; background: var(--gold, #c8a84b); color: #14202b; }
+  .ai-msg.bot { align-self: flex-start; background: rgba(255,255,255,0.08); }
+  .ai-msg.error { align-self: flex-start; background: rgba(232,160,160,0.15); color: #f0b4b4; border: 1px solid rgba(232,160,160,0.35); }
+  .ai-msg a { color: var(--sky, #6cc3d9); text-decoration: underline; }
+  .ai-retry { margin-top: 0.4rem; padding: 0.25rem 0.8rem; border-radius: 999px; cursor: pointer; font: inherit; font-size: 0.8rem;
+    background: transparent; color: inherit; border: 1px solid currentColor; display: block; }
+  .ai-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0 0.8rem 0.5rem; }
+  .ai-chip { padding: 0.3rem 0.7rem; border-radius: 999px; cursor: pointer; font: inherit; font-size: 0.78rem;
+    background: transparent; color: var(--gold, #c8a84b); border: 1px solid var(--gold, #c8a84b); }
+  .ai-form { display: flex; gap: 0.4rem; padding: 0.6rem 0.8rem 0.3rem; }
+  .ai-form input { flex: 1; min-width: 0; padding: 0.55rem 0.7rem; border-radius: 8px; font: inherit; font-size: 0.9rem;
+    background: rgba(255,255,255,0.07); color: inherit; border: 1px solid rgba(255,255,255,0.15); }
+  .ai-send { padding: 0.55rem 0.9rem; border: 0; border-radius: 8px; cursor: pointer; font: inherit; font-weight: 600;
+    background: var(--gold, #c8a84b); color: #14202b; }
+  .ai-send[disabled], .ai-form input[disabled] { opacity: 0.55; cursor: not-allowed; }
+  .ai-note { margin: 0; padding: 0.2rem 0.8rem 0.6rem; font-size: 0.7rem; color: rgba(255,255,255,0.5); }
+  @media print { .ai-assist { display: none; } }
+</style>
+
+<script>
+(function () {
+  var root = document.getElementById('aiAssistant');
+  if (!root) { return; }
+  var url = root.dataset.url, csrf = root.dataset.csrf;
+  var panel = document.getElementById('aiPanel'), toggle = document.getElementById('aiToggle');
+  var log = document.getElementById('aiLog'), form = document.getElementById('aiForm');
+  var input = document.getElementById('aiInput'), send = document.getElementById('aiSend');
+  var chips = document.getElementById('aiChips');
+  var history = [];          // the last few messages, sent along so follow-up questions make sense
+  var busy = false;
+
+  /* Only links to our own pages are made clickable. Everything else stays plain text. */
+  var LINKABLE = /(\/(?:attractions|hotels|events)\/(?:room\/)?\d+\/|\/contact\/)/g;
+
+  function bubble(kind) {
+    var node = document.createElement('div');
+    node.className = 'ai-msg ' + kind;
+    log.appendChild(node);
+    return node;
+  }
+  function scrollDown() { log.scrollTop = log.scrollHeight; }
+
+  function fillWithLinks(node, text) {
+    text.split(LINKABLE).forEach(function (piece, index) {
+      if (index % 2 === 1) {
+        var link = document.createElement('a');
+        link.href = piece; link.textContent = piece;
+        node.appendChild(link);
+      } else if (piece) {
+        node.appendChild(document.createTextNode(piece));
+      }
+    });
+  }
+
+  function setBusy(state) {
+    busy = state;
+    input.disabled = state; send.disabled = state;
+  }
+
+  function open() {
+    panel.hidden = false; toggle.setAttribute('aria-expanded', 'true');
+    if (!log.children.length) {
+      fillWithLinks(bubble('bot'), 'Hi! Ask me about attractions, hotels and events in Iligan.');
+    }
+    input.focus();
+  }
+  function close() { panel.hidden = true; toggle.setAttribute('aria-expanded', 'false'); toggle.focus(); }
+
+  function showError(message, question) {
+    var node = bubble('error');
+    node.appendChild(document.createTextNode(message));
+    var retry = document.createElement('button');
+    retry.type = 'button'; retry.className = 'ai-retry'; retry.textContent = 'Try again';
+    retry.addEventListener('click', function () { node.remove(); ask(question, true); });
+    node.appendChild(retry);
+    scrollDown();
+  }
+
+  function ask(question, isRetry) {
+    if (busy) { return; }
+    chips.hidden = true;
+    if (!isRetry) { bubble('user').textContent = question; }
+    var waiting = bubble('bot');
+    waiting.textContent = 'Thinking…';
+    scrollDown();
+    setBusy(true);
+
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf, 'Accept': 'application/json' },
+      body: JSON.stringify({ message: question, history: history.slice(-6) })
+    })
+      .then(function (response) {
+        return response.json().then(function (body) { return body; });
+      })
+      .then(function (body) {
+        waiting.remove();
+        if (body && body.ok) {
+          var reply = bubble('bot');
+          fillWithLinks(reply, String(body.answer));
+          history.push({ role: 'user', text: question }, { role: 'assistant', text: String(body.answer) });
+          history = history.slice(-6);
+        } else {
+          showError((body && body.message) || 'Something went wrong. Please try again.', question);
+        }
+      })
+      .catch(function () {
+        waiting.remove();
+        showError("I couldn't reach the server. Please check your connection and try again.", question);
+      })
+      .then(function () { setBusy(false); scrollDown(); if (!panel.hidden) { input.focus(); } });
+  }
+
+  toggle.addEventListener('click', function () { if (panel.hidden) { open(); } else { close(); } });
+  document.getElementById('aiClose').addEventListener('click', close);
+  document.addEventListener('keydown', function (event) { if (event.key === 'Escape' && !panel.hidden) { close(); } });
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    var question = input.value.trim();
+    if (!question) { return; }
+    input.value = '';
+    ask(question, false);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.ai-chip'), function (chip) {
+    chip.addEventListener('click', function () { ask(chip.textContent, false); });
+  });
+})();
+</script>
+{% endif %}

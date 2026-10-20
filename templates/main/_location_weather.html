@@ -1,0 +1,154 @@
+{% load l10n %}
+{% comment %}
+  Map + weather box for attraction, hotel and event pages.
+  Include with:  {% include 'main/_location_weather.html' with obj=attraction kind='attraction' %}
+  Shows nothing when the place has no coordinates yet.
+{% endcomment %}
+{% if obj.latitude is not None and obj.longitude is not None %}
+<section class="geo-card" id="geoCard"
+         data-lat="{{ obj.latitude|unlocalize }}" data-lng="{{ obj.longitude|unlocalize }}"
+         data-name="{{ obj.name }}" data-kind="{{ kind }}"
+         data-weather-url="{% url 'weather_api' kind obj.pk %}">
+  <h3 class="sec-title">Map &amp; <em>Weather</em></h3>
+  <div id="geoMap" class="geo-map" role="region" aria-label="Map showing {{ obj.name }}">Loading map…</div>
+  <p class="geo-credit">
+    <a href="https://www.openstreetmap.org/?mlat={{ obj.latitude|unlocalize }}&amp;mlon={{ obj.longitude|unlocalize }}#map=16/{{ obj.latitude|unlocalize }}/{{ obj.longitude|unlocalize }}" target="_blank" rel="noopener">Open in OpenStreetMap</a>
+    · Map data © OpenStreetMap contributors · Weather by Open-Meteo
+  </p>
+  <div id="geoWeather" class="geo-weather" aria-live="polite">Loading weather…</div>
+</section>
+
+<style>
+  .geo-card { margin: 2rem 0; padding: 1.25rem; border-radius: 14px;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); }
+  .geo-map { height: 300px; border-radius: 10px; overflow: hidden; margin-top: 0.75rem;
+    background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.6); font-size: 0.9rem; text-align: center; padding: 0.5rem; }
+  .geo-map.leaflet-container { display: block; padding: 0; }
+  .geo-credit { font-size: 0.75rem; color: rgba(255,255,255,0.45); margin: 0.5rem 0 1rem; }
+  .geo-credit a { color: var(--sky, #2a9bb5); }
+  .geo-weather { color: rgba(255,255,255,0.8); font-size: 0.95rem; }
+  .geo-now { font-size: 1.05rem; margin-bottom: 0.5rem; }
+  .geo-sub { color: var(--gold, #c8a84b); font-size: 0.8rem; letter-spacing: 0.08em;
+    text-transform: uppercase; margin: 0.75rem 0 0.5rem; }
+  .geo-muted { color: rgba(255,255,255,0.55); }
+  .geo-failed { color: #e8a0a0; }
+  .geo-retry { margin-top: 0.5rem; padding: 0.4rem 1rem; border-radius: 999px; cursor: pointer;
+    background: transparent; color: var(--gold, #c8a84b); border: 1px solid var(--gold, #c8a84b); }
+  .geo-days { display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 0.6rem; }
+  .geo-day { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px; padding: 0.6rem 0.4rem; text-align: center; font-size: 0.8rem; }
+  .geo-day .geo-icon { font-size: 1.6rem; line-height: 1.2; }
+  .geo-day .geo-temp { color: var(--gold, #c8a84b); font-weight: 600; }
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function () {
+  var card = document.getElementById('geoCard');
+  if (!card) { return; }
+  var lat = parseFloat(card.dataset.lat), lng = parseFloat(card.dataset.lng);
+  var mapBox = document.getElementById('geoMap');
+
+  /* ---- Map (Leaflet + OpenStreetMap tiles) ---- */
+  if (typeof L === 'undefined') {
+    mapBox.textContent = 'The map could not be loaded. Check your internet connection and refresh the page.';
+    mapBox.classList.add('geo-failed');
+  } else {
+    mapBox.textContent = '';
+    var map = L.map(mapBox, { scrollWheelZoom: false }).setView([lat, lng], 15);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      /* OpenStreetMap blocks tiles when the browser does not say which site is asking */
+      referrerPolicy: 'strict-origin-when-cross-origin',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    var label = document.createElement('strong');
+    label.textContent = card.dataset.name;
+    L.marker([lat, lng]).addTo(map).bindPopup(label);
+  }
+
+  /* ---- Weather (our own /api/weather/... endpoint, which asks Open-Meteo) ---- */
+  var box = document.getElementById('geoWeather');
+
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) { node.className = cls; }
+    if (text !== undefined) { node.textContent = text; }
+    return node;
+  }
+
+  function showError(message) {
+    box.textContent = '';
+    box.appendChild(el('p', 'geo-failed', message));
+    var retry = el('button', 'geo-retry', 'Try again');
+    retry.type = 'button';
+    retry.addEventListener('click', load);
+    box.appendChild(retry);
+  }
+
+  function dayTile(day) {
+    var tile = el('div', 'geo-day');
+    tile.title = day.summary;
+    tile.appendChild(el('div', '', day.label));
+    tile.appendChild(el('div', 'geo-icon', day.icon));
+    var high = day.tmax === null ? '–' : day.tmax + '°';
+    var low = day.tmin === null ? '–' : day.tmin + '°';
+    tile.appendChild(el('div', 'geo-temp', high + ' / ' + low));
+    if (day.rain !== null && day.rain !== undefined) {
+      tile.appendChild(el('div', '', '💧 ' + day.rain + '%'));
+    }
+    return tile;
+  }
+
+  function todayLocal() {
+    var now = new Date();
+    var month = String(now.getMonth() + 1).padStart(2, '0');
+    var day = String(now.getDate()).padStart(2, '0');
+    return now.getFullYear() + '-' + month + '-' + day;
+  }
+
+  function render(data) {
+    box.textContent = '';
+    var now = data.current;
+    if (now) {
+      var temp = now.temperature === null ? '' : ', ' + now.temperature + '°C';
+      box.appendChild(el('p', 'geo-now', 'Right now: ' + now.icon + ' ' + now.summary + temp));
+    }
+    if (card.dataset.kind === 'event') {
+      if (!data.event_in_range) {
+        var past = data.event_date < todayLocal();
+        box.appendChild(el('p', 'geo-muted', past
+          ? 'This event has already taken place.'
+          : 'A forecast for the event day (' + data.event_date + ') is not available yet. Forecasts cover the next 16 days.'));
+        return;
+      }
+      box.appendChild(el('p', 'geo-sub', 'Forecast for the event day'));
+    } else {
+      box.appendChild(el('p', 'geo-sub', '7-day forecast'));
+    }
+    var grid = el('div', 'geo-days');
+    data.days.forEach(function (day) { grid.appendChild(dayTile(day)); });
+    box.appendChild(grid);
+  }
+
+  function load() {
+    box.textContent = 'Loading weather…';
+    fetch(card.dataset.weatherUrl, { headers: { 'Accept': 'application/json' } })
+      .then(function (response) {
+        return response.json().then(function (body) { return { body: body }; });
+      })
+      .then(function (result) {
+        if (result.body && result.body.ok) { render(result.body); }
+        else if (result.body && result.body.error === 'no_location') { showError('No map location is set for this place yet.'); }
+        else { showError('Weather is not available right now. Please try again in a moment.'); }
+      })
+      .catch(function () {
+        showError('Weather is not available right now. Please check your connection and try again.');
+      });
+  }
+
+  load();
+})();
+</script>
+{% endif %}
