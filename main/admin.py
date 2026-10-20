@@ -1,10 +1,45 @@
-from django.contrib import admin
+from django import forms
+from django.contrib import admin, messages
+from django.core.files.uploadedfile import UploadedFile
 from .models import (
     Category, Attraction, AttractionService, ServiceBooking, AttractionReview,
     Event, EventBooking, EventReview,
     Hotel, Room, HotelBooking, HotelReview,
     Contact, Payment, Staff,
 )
+from .cloud_storage import ImageStorageError, ImageValidationError, validate_image_upload
+
+
+class ImageCheckedForm(forms.ModelForm):
+    """Applies the same picture rules as the custom admin panel (size, type, real content)."""
+
+    def clean_image(self):
+        image = self.cleaned_data.get('image')
+        if isinstance(image, UploadedFile):
+            try:
+                validate_image_upload(image)
+            except ImageValidationError as exc:
+                raise forms.ValidationError(str(exc))
+        return image
+
+
+class ImageSafeAdmin(admin.ModelAdmin):
+    """If the picture cannot be stored (e.g. Cloudinary unreachable), save the rest anyway."""
+    form = ImageCheckedForm
+
+    def save_model(self, request, obj, form, change):
+        # Store the picture BEFORE saving the record: the admin saves inside a database
+        # transaction, and a failure in the middle of it would spoil the whole save.
+        image = form.cleaned_data.get('image')
+        if isinstance(image, UploadedFile):
+            previous = getattr(form.initial.get('image'), 'name', '') or ''
+            try:
+                obj.image.save(image.name, image, save=False)
+            except ImageStorageError as exc:
+                obj.image = previous or None
+                self.message_user(request, f'Saved, but the picture was not stored: {exc}', messages.ERROR)
+        super().save_model(request, obj, form, change)
+
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -18,7 +53,7 @@ class AttractionServiceInline(admin.TabularInline):
 
 
 @admin.register(Attraction)
-class AttractionAdmin(admin.ModelAdmin):
+class AttractionAdmin(ImageSafeAdmin):
     list_display  = ['name', 'category', 'location', 'entrance_fee', 'is_featured']
     list_filter   = ['category', 'is_featured']
     inlines       = [AttractionServiceInline]
@@ -51,13 +86,13 @@ class RoomInline(admin.TabularInline):
 
 
 @admin.register(Hotel)
-class HotelAdmin(admin.ModelAdmin):
+class HotelAdmin(ImageSafeAdmin):
     list_display = ['name', 'address', 'stars', 'is_active']
     inlines      = [RoomInline]
 
 
 @admin.register(Room)
-class RoomAdmin(admin.ModelAdmin):
+class RoomAdmin(ImageSafeAdmin):
     list_display = ['hotel', 'room_number', 'room_type', 'price', 'max_guests', 'is_available']
     list_filter  = ['hotel', 'room_type', 'is_available']
 
@@ -75,7 +110,7 @@ class HotelReviewAdmin(admin.ModelAdmin):
 
 
 @admin.register(Event)
-class EventAdmin(admin.ModelAdmin):
+class EventAdmin(ImageSafeAdmin):
     list_display = ['name', 'date', 'location', 'is_ticketed', 'ticket_price', 'ticket_capacity']
     list_filter  = ['is_ticketed']
 
@@ -112,4 +147,4 @@ class PaymentAdmin(admin.ModelAdmin):
 @admin.register(Staff)
 class StaffAdmin(admin.ModelAdmin):
     list_display = ['user', 'role', 'attraction', 'hotel', 'event']
-    list_filter  = ['role']
+    list_filter  = ['role']

@@ -68,6 +68,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'main.context_processors.assistant',
+                'main.context_processors.image_storage',
             ],
         },
     },
@@ -144,6 +145,32 @@ ASSISTANT_PER_MINUTE = config('ASSISTANT_PER_MINUTE', default=6, cast=int)
 ASSISTANT_PER_DAY = config('ASSISTANT_PER_DAY', default=60, cast=int)
 ASSISTANT_SITE_PER_DAY = config('ASSISTANT_SITE_PER_DAY', default=300, cast=int)
 
+# ── Tourism images (Cloudinary) ──
+# Get the three values from https://console.cloudinary.com/app/settings/api-keys and put them
+# in .env. Without them, images are saved in the local media/ folder exactly as before.
+CLOUDINARY_CLOUD_NAME = config('CLOUDINARY_CLOUD_NAME', default='')
+CLOUDINARY_API_KEY = config('CLOUDINARY_API_KEY', default='')
+CLOUDINARY_API_SECRET = config('CLOUDINARY_API_SECRET', default='')
+# Folder name prefix inside your Cloudinary account.
+CLOUDINARY_FOLDER = config('CLOUDINARY_FOLDER', default='iligan_tourism')
+# Applied to every displayed picture: never wider than 1600 px, best format and quality automatically.
+CLOUDINARY_DELIVERY_TRANSFORM = config('CLOUDINARY_DELIVERY_TRANSFORM', default='c_limit,w_1600,f_auto,q_auto')
+CLOUDINARY_TIMEOUT = config('CLOUDINARY_TIMEOUT', default=30, cast=int)
+# FREE PythonAnywhere accounts reach the internet only through a proxy. There, set
+#   CLOUDINARY_API_PROXY=http://proxy.server:3128
+# Leave blank on your own computer and on paid PythonAnywhere accounts.
+CLOUDINARY_API_PROXY = config('CLOUDINARY_API_PROXY', default='')
+# Cloudinary's free plan refuses pictures above 10 MB or 25 megapixels, so stay below that.
+IMAGE_MAX_UPLOAD_MB = config('IMAGE_MAX_UPLOAD_MB', default=8, cast=int)
+IMAGE_MAX_MEGAPIXELS = config('IMAGE_MAX_MEGAPIXELS', default=25, cast=int)
+
+# Where uploaded files go. HybridMediaStorage = Cloudinary for new images (when configured),
+# local media/ folder for existing ones.
+STORAGES = {
+    'default': {'BACKEND': 'main.cloud_storage.HybridMediaStorage'},
+    'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+}
+
 # The base URL of your site — used for PayMongo redirect after payment
 # Set SITE_URL in the environment when deploying, e.g. https://yourname.pythonanywhere.com
-SITE_URL = config('SITE_URL', default='http://127.0.0.1:8000').rstrip('/')
+SITE_URL = config('SITE_URL', default='http://127.0.0.1:8000').rstrip('/')

@@ -18,6 +18,7 @@ def _generate_reference(prefix):
     chars = string.ascii_uppercase + string.digits
     return prefix + '-' + ''.join(random.choices(chars, k=8))
 from . import assistant, geo
+from .cloud_storage import ImageStorageError, ImageValidationError, validate_image_upload
 from .models import (
     Category, Attraction, AttractionService, ServiceBooking, AttractionReview,
     Event, EventBooking,
@@ -73,6 +74,28 @@ def _parse_coordinate(raw, limit):
     if not value.is_finite() or abs(value) > limit:
         return None
     return value.quantize(Decimal('0.000001'))
+
+
+def _save_with_uploaded_image(request, obj):
+    """
+    Save `obj`, attaching the uploaded "image" file when there is one (Batch 5).
+
+    The picture is checked first (size, type, real content) and stored BEFORE the record
+    is saved. A bad picture, or a storage problem (for example Cloudinary unreachable),
+    never loses the admin's other edits: the record is saved with its previous picture
+    and a red message explains.
+    """
+    problem = None
+    upload = request.FILES.get('image')
+    if upload is not None:
+        try:
+            validate_image_upload(upload)
+            obj.image.save(upload.name, upload, save=False)
+        except (ImageValidationError, ImageStorageError) as exc:
+            problem = str(exc)
+    obj.save()
+    if problem:
+        messages.error(request, f'The record was saved, but the picture was not: {problem}')
 
 
 def _apply_coordinates(request, obj, search_texts):
@@ -670,10 +693,8 @@ def admin_attraction_add(request):
         cat_id = request.POST.get('category')
         if cat_id:
             a.category_id = cat_id
-        if 'image' in request.FILES:
-            a.image = request.FILES['image']
         _apply_coordinates(request, a, [f'{a.name}, {a.location}', a.name, a.location])
-        a.save()
+        _save_with_uploaded_image(request, a)
         messages.success(request, f'Attraction "{a.name}" added successfully.')
         return redirect('admin_attractions')
     return render(request, 'admin_panel/attraction_form.html', {
@@ -693,10 +714,8 @@ def admin_attraction_edit(request, pk):
         a.is_featured   = 'is_featured' in request.POST
         cat_id = request.POST.get('category')
         a.category_id = cat_id if cat_id else None
-        if 'image' in request.FILES:
-            a.image = request.FILES['image']
         _apply_coordinates(request, a, [f'{a.name}, {a.location}', a.name, a.location])
-        a.save()
+        _save_with_uploaded_image(request, a)
         messages.success(request, f'Attraction "{a.name}" updated.')
         return redirect('admin_attractions')
     return render(request, 'admin_panel/attraction_form.html', {
@@ -741,10 +760,8 @@ def admin_hotel_add(request):
             stars=int(request.POST.get('stars', 3)),
             is_active='is_active' in request.POST,
         )
-        if 'image' in request.FILES:
-            h.image = request.FILES['image']
         _apply_coordinates(request, h, [f'{h.name}, {h.address}', h.name, h.address])
-        h.save()
+        _save_with_uploaded_image(request, h)
         messages.success(request, f'Hotel "{h.name}" added successfully.')
         return redirect('admin_hotels')
     return render(request, 'admin_panel/hotel_form.html', {'active': 'hotels'})
@@ -760,10 +777,8 @@ def admin_hotel_edit(request, pk):
         h.email       = request.POST.get('email','')
         h.stars       = int(request.POST.get('stars', 3))
         h.is_active   = 'is_active' in request.POST
-        if 'image' in request.FILES:
-            h.image = request.FILES['image']
         _apply_coordinates(request, h, [f'{h.name}, {h.address}', h.name, h.address])
-        h.save()
+        _save_with_uploaded_image(request, h)
         messages.success(request, f'Hotel "{h.name}" updated.')
         return redirect('admin_hotels')
     return render(request, 'admin_panel/hotel_form.html', {'active': 'hotels', 'hotel': h})
@@ -805,10 +820,8 @@ def admin_event_add(request):
             ticket_price=request.POST.get('ticket_price', 0),
             ticket_capacity=request.POST.get('ticket_capacity', 0),
         )
-        if 'image' in request.FILES:
-            e.image = request.FILES['image']
         _apply_coordinates(request, e, [e.location])
-        e.save()
+        _save_with_uploaded_image(request, e)
         messages.success(request, f'Event "{e.name}" added successfully.')
         return redirect('admin_events')
     return render(request, 'admin_panel/event_form.html', {'active': 'events'})
@@ -825,10 +838,8 @@ def admin_event_edit(request, pk):
         e.is_ticketed     = 'is_ticketed' in request.POST
         e.ticket_price    = request.POST.get('ticket_price', 0)
         e.ticket_capacity = request.POST.get('ticket_capacity', 0)
-        if 'image' in request.FILES:
-            e.image = request.FILES['image']
         _apply_coordinates(request, e, [e.location])
-        e.save()
+        _save_with_uploaded_image(request, e)
         messages.success(request, f'Event "{e.name}" updated.')
         return redirect('admin_events')
     return render(request, 'admin_panel/event_form.html', {'active': 'events', 'event': e})
@@ -1083,9 +1094,7 @@ def admin_room_add(request):
             description=request.POST.get('description', ''),
             is_available='is_available' in request.POST,
         )
-        if 'image' in request.FILES:
-            r.image = request.FILES['image']
-        r.save()
+        _save_with_uploaded_image(request, r)
         messages.success(request, f'Room {r.room_number} added.')
         return redirect('admin_rooms')
     return render(request, 'admin_panel/room_form.html', {
@@ -1104,9 +1113,7 @@ def admin_room_edit(request, pk):
         r.max_guests  = request.POST.get('max_guests', 2)
         r.description = request.POST.get('description', '')
         r.is_available = 'is_available' in request.POST
-        if 'image' in request.FILES:
-            r.image = request.FILES['image']
-        r.save()
+        _save_with_uploaded_image(request, r)
         messages.success(request, f'Room {r.room_number} updated.')
         return redirect('admin_rooms')
     return render(request, 'admin_panel/room_form.html', {
@@ -1671,4 +1678,4 @@ def staff_booking_detail(request, booking_type, pk):
         'active':       'bookings',
         'booking':      booking,
         'booking_type': booking_type,
-    })
+    })

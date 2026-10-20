@@ -50,7 +50,8 @@
 
         <div class="form-group">
           <label>Image</label>
-          <input type="file" name="image" accept="image/*">
+          <input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif">
+          <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-top:0.3rem;display:block;">JPG, PNG, WebP or GIF, up to {{ image_max_mb }} MB. Stored on: {{ image_storage_label }}.</small>
           {% if attraction.image %}
           <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-top:0.3rem;display:block;">Current: {{ attraction.image.name }}</small>
           {% endif %}
