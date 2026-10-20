@@ -4,4 +4,5 @@ __pycache__/
 db.sqlite3
 venv/
 env/
-staticfiles/
+staticfiles/project.zip
+project.zip project.zip
