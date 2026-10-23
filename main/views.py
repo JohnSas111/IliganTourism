@@ -17,7 +17,7 @@ import random, re, string
 def _generate_reference(prefix):
     chars = string.ascii_uppercase + string.digits
     return prefix + '-' + ''.join(random.choices(chars, k=8))
-from . import assistant, geo
+from . import assistant, geo, notifications
 from .cloud_storage import ImageStorageError, ImageValidationError, validate_image_upload
 from .models import (
     Category, Attraction, AttractionService, ServiceBooking, AttractionReview,
@@ -544,6 +544,7 @@ def _cancel_booking(request, booking, label):
     else:
         booking.status = 'cancelled'
         booking.save()
+        notifications.booking_cancelled(booking)
         # NOTE: no automatic refund is issued by this system. Refunds are handled by staff.
         messages.success(
             request,
@@ -887,8 +888,14 @@ def _set_booking_status(request, booking, model_class):
     if new_status not in valid:
         messages.error(request, 'Invalid booking status.')
         return False
+    old_status = booking.status
     booking.status = new_status
     booking.save()
+    if new_status != old_status:
+        if new_status == 'cancelled':
+            notifications.booking_cancelled(booking, by_staff=True)
+        elif new_status == 'confirmed':
+            notifications.booking_confirmed(booking, by_staff=True)
     messages.success(request, 'Booking status updated.')
     return True
 
@@ -1370,6 +1377,7 @@ def payment_success(request):
         # If verification fails, check if payment was already created
         paid = payment.status == 'paid'
 
+    new_booking = None
     if paid and payment.status != 'paid':
         try:
             with transaction.atomic():
@@ -1380,11 +1388,13 @@ def payment_success(request):
                     _create_booking_from_payment(payment, request.user)
                     payment.status = 'paid'
                     payment.save()
+                    new_booking = payment.hotel_booking or payment.event_booking or payment.service_booking
         except BookingUnavailable as reason:
             # The customer HAS paid, but the room/tickets were taken while they were paying.
             # Record the payment so staff can see it in the admin and arrange a refund.
             Payment.objects.filter(pk=payment.pk).update(status='paid')
             logging.error(f'Paid but not fulfilled: payment {payment.pk} ({reason})')
+            notifications.payment_unfulfilled(payment, str(reason))
             request.session.pop('pending_booking', None)
             request.session.pop('payment_id', None)
             messages.error(
@@ -1393,6 +1403,9 @@ def payment_success(request):
                 f'Please contact us with payment reference PAY-{payment.pk} so we can refund or rebook you.'
             )
             return redirect('my_bookings')
+        # The booking is saved for good at this point, so it is safe to email the customer.
+        if new_booking is not None:
+            notifications.booking_confirmed(new_booking)
         # Clear session
         request.session.pop('pending_booking', None)
         request.session.pop('payment_id', None)

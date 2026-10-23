@@ -1,0 +1,13 @@
+{% autoescape off %}{{ heading }}
+
+{% for paragraph in paragraphs %}{{ paragraph }}
+
+{% endfor %}{% for label, value in details %}{{ label }}: {{ value }}
+{% endfor %}{% if button_url %}
+{{ button_label }}: {{ button_url }}
+{% endif %}{% if footer %}
+{{ footer }}
+{% endif %}
+--
+{{ brand }}
+{% endautoescape %}

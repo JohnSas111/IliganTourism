@@ -293,3 +293,33 @@ class Staff(models.Model):
         elif self.role == 'event' and self.event:
             return self.event.name
         return 'Unassigned'
+
+
+class EmailLog(models.Model):
+    """
+    One row per notification email (Batch 6). The unique `key` is what stops the same email
+    being sent twice, e.g. "confirmed:hotel:12" = the confirmation for hotel booking 12.
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Sending'),
+        ('sent',    'Sent'),
+        ('failed',  'Failed'),
+        ('skipped', 'Skipped'),
+    ]
+    key = models.CharField(max_length=120, unique=True)
+    kind = models.CharField(max_length=40)
+    recipient = models.CharField(max_length=254, blank=True)
+    subject = models.CharField(max_length=200, blank=True)
+    detail = models.CharField(max_length=300, blank=True, help_text='Extra text the email needs, e.g. why a booking failed.')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    error = models.CharField(max_length=300, blank=True)
+    provider_id = models.CharField(max_length=200, blank=True, help_text='Message id returned by Brevo.')
+    attempts = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.key} — {self.status}'

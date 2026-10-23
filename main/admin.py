@@ -5,7 +5,7 @@ from .models import (
     Category, Attraction, AttractionService, ServiceBooking, AttractionReview,
     Event, EventBooking, EventReview,
     Hotel, Room, HotelBooking, HotelReview,
-    Contact, Payment, Staff,
+    Contact, Payment, Staff, EmailLog,
 )
 from .cloud_storage import ImageStorageError, ImageValidationError, validate_image_upload
 
@@ -147,4 +147,16 @@ class PaymentAdmin(admin.ModelAdmin):
 @admin.register(Staff)
 class StaffAdmin(admin.ModelAdmin):
     list_display = ['user', 'role', 'attraction', 'hotel', 'event']
-    list_filter  = ['role']
+    list_filter  = ['role']
+
+
+@admin.register(EmailLog)
+class EmailLogAdmin(admin.ModelAdmin):
+    """Read-only record of every notification email: who got what, and whether it was sent."""
+    list_display = ['created_at', 'kind', 'recipient', 'subject', 'status', 'attempts']
+    list_filter = ['status', 'kind']
+    search_fields = ['key', 'recipient', 'subject']
+    readonly_fields = [field.name for field in EmailLog._meta.fields]
+
+    def has_add_permission(self, request):
+        return False

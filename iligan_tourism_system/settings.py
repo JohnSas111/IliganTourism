@@ -171,6 +171,24 @@ STORAGES = {
     'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
 }
 
+# ── Booking email notifications (Brevo) ──
+# 1) brevo.com > Senders: add and verify the address emails are sent FROM (BREVO_SENDER_EMAIL).
+# 2) brevo.com > SMTP & API > API keys: create a key (starts with "xkeysib-") for BREVO_API_KEY.
+# Without both, no email is sent and everything else works exactly as before.
+BREVO_API_KEY = config('BREVO_API_KEY', default='')
+BREVO_SENDER_EMAIL = config('BREVO_SENDER_EMAIL', default='')
+BREVO_SENDER_NAME = config('BREVO_SENDER_NAME', default='Iligan Tourism')
+BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email'
+BREVO_TIMEOUT = config('BREVO_TIMEOUT', default=10, cast=int)
+# FREE PythonAnywhere accounts: only if the test says the proxy is needed, set
+#   BREVO_API_PROXY=http://proxy.server:3128
+BREVO_API_PROXY = config('BREVO_API_PROXY', default='')
+if BREVO_API_KEY and BREVO_SENDER_EMAIL:
+    EMAIL_BACKEND = 'main.email_backend.BrevoEmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'   # sends nothing
+DEFAULT_FROM_EMAIL = f'{BREVO_SENDER_NAME} <{BREVO_SENDER_EMAIL}>' if BREVO_SENDER_EMAIL else 'Iligan Tourism <noreply@localhost>'
+
 # The base URL of your site — used for PayMongo redirect after payment
 # Set SITE_URL in the environment when deploying, e.g. https://yourname.pythonanywhere.com
 SITE_URL = config('SITE_URL', default='http://127.0.0.1:8000').rstrip('/')
