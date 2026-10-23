@@ -4,7 +4,7 @@
   The API key is never in this page: the browser talks to our own /assistant/ask/ endpoint.
 {% endcomment %}
 {% if assistant_enabled %}
-<div id="aiAssistant" class="ai-assist" data-url="{% url 'assistant_ask' %}" data-csrf="{{ csrf_token }}">
+<div id="aiAssistant" class="ai-assist" data-url="{% url 'assistant_ask' %}" data-csrf="{{ csrf_token }}" data-auth="{% if user.is_authenticated %}1{% else %}0{% endif %}">
   <button type="button" id="aiToggle" class="ai-toggle" aria-expanded="false" aria-controls="aiPanel">
     <span aria-hidden="true">💬</span> Ask Iligan
   </button>
@@ -12,6 +12,7 @@
   <section id="aiPanel" class="ai-panel" aria-label="Iligan tourism assistant" hidden>
     <header class="ai-head">
       <strong>Ask about Iligan</strong>
+      <button type="button" id="aiNew" class="ai-new" hidden>New chat</button>
       <button type="button" id="aiClose" class="ai-close" aria-label="Close assistant">&times;</button>
     </header>
 
@@ -52,7 +53,12 @@
   .ai-msg a { color: var(--sky, #6cc3d9); text-decoration: underline; }
   .ai-retry { margin-top: 0.4rem; padding: 0.25rem 0.8rem; border-radius: 999px; cursor: pointer; font: inherit; font-size: 0.8rem;
     background: transparent; color: inherit; border: 1px solid currentColor; display: block; }
+  .ai-new { margin-left: auto; margin-right: 0.5rem; background: transparent; color: inherit; border: 1px solid currentColor;
+    border-radius: 999px; font: inherit; font-size: 0.72rem; padding: 0.15rem 0.6rem; cursor: pointer; opacity: 0.85; }
+  .ai-new[hidden] { display: none; }
+  .ai-new:disabled { opacity: 0.4; cursor: default; }
   .ai-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0 0.8rem 0.5rem; }
+  .ai-chips[hidden] { display: none; }   /* must come after the rule above, or it has no effect */
   .ai-chip { padding: 0.3rem 0.7rem; border-radius: 999px; cursor: pointer; font: inherit; font-size: 0.78rem;
     background: transparent; color: var(--gold, #c8a84b); border: 1px solid var(--gold, #c8a84b); }
   .ai-form { display: flex; gap: 0.4rem; padding: 0.6rem 0.8rem 0.3rem; }
@@ -73,9 +79,18 @@
   var panel = document.getElementById('aiPanel'), toggle = document.getElementById('aiToggle');
   var log = document.getElementById('aiLog'), form = document.getElementById('aiForm');
   var input = document.getElementById('aiInput'), send = document.getElementById('aiSend');
-  var chips = document.getElementById('aiChips');
+  var chips = document.getElementById('aiChips'), newChat = document.getElementById('aiNew');
   var history = [];          // the last few messages, sent along so follow-up questions make sense
+  var saved = [];            // the whole conversation, kept for this browser tab (see store/load)
   var busy = false;
+
+  /* The conversation is remembered for THIS TAB only (sessionStorage): it survives going to another
+     page, and is gone when the tab is closed. It is cleared when someone logs in or out, and by
+     "New chat". Only the chat text is stored, never any account data. Everything is best effort:
+     if the browser blocks storage, the chat simply works as before. */
+  var STORE_KEY = 'iliganChat.v1', MAX_SAVED = 20, MAX_TEXT = 4000;
+  var auth = root.dataset.auth || '0';
+  var GREETING = 'Hi! Ask me about attractions, hotels and events in Iligan.';
 
   /* Only links to our own pages are made clickable. Everything else stays plain text. */
   var LINKABLE = /(\/(?:attractions|hotels|events)\/(?:room\/)?\d+\/|\/contact\/)/g;
@@ -102,17 +117,41 @@
 
   function setBusy(state) {
     busy = state;
-    input.disabled = state; send.disabled = state;
+    input.disabled = state; send.disabled = state; newChat.disabled = state;
   }
 
-  function open() {
-    panel.hidden = false; toggle.setAttribute('aria-expanded', 'true');
-    if (!log.children.length) {
-      fillWithLinks(bubble('bot'), 'Hi! Ask me about attractions, hotels and events in Iligan.');
-    }
-    input.focus();
+  function store() {
+    try {
+      sessionStorage.setItem(STORE_KEY, JSON.stringify({ auth: auth, open: !panel.hidden, msgs: saved }));
+    } catch (e) { /* storage blocked: nothing is remembered, the chat still works */ }
   }
-  function close() { panel.hidden = true; toggle.setAttribute('aria-expanded', 'false'); toggle.focus(); }
+  function load() {
+    try {
+      var data = JSON.parse(sessionStorage.getItem(STORE_KEY) || 'null');
+      if (!data || data.auth !== auth || !Array.isArray(data.msgs)) { return null; }
+      var msgs = data.msgs.filter(function (m) {
+        return m && (m.kind === 'user' || m.kind === 'bot') && typeof m.text === 'string' && m.text.length <= MAX_TEXT;
+      }).slice(-MAX_SAVED);
+      return { open: data.open === true, msgs: msgs };
+    } catch (e) { return null; }
+  }
+  function showMessage(kind, text) {
+    if (kind === 'user') { bubble('user').textContent = text; } else { fillWithLinks(bubble('bot'), text); }
+  }
+  /* The question buttons and "New chat" depend on whether the visitor has asked anything yet. */
+  function refresh() {
+    var started = !!log.querySelector('.ai-msg.user');
+    chips.hidden = started;
+    newChat.hidden = !started;
+  }
+
+  function open(keepFocus) {
+    panel.hidden = false; toggle.setAttribute('aria-expanded', 'true');
+    scrollDown();
+    if (!keepFocus) { input.focus(); }
+    store();
+  }
+  function close() { panel.hidden = true; toggle.setAttribute('aria-expanded', 'false'); store(); toggle.focus(); }
 
   function showError(message, question) {
     var node = bubble('error');
@@ -148,6 +187,9 @@
           fillWithLinks(reply, String(body.answer));
           history.push({ role: 'user', text: question }, { role: 'assistant', text: String(body.answer) });
           history = history.slice(-6);
+          saved.push({ kind: 'user', text: question }, { kind: 'bot', text: String(body.answer) });
+          saved = saved.slice(-MAX_SAVED);
+          store();
         } else {
           showError((body && body.message) || 'Something went wrong. Please try again.', question);
         }
@@ -156,9 +198,15 @@
         waiting.remove();
         showError("I couldn't reach the server. Please check your connection and try again.", question);
       })
-      .then(function () { setBusy(false); scrollDown(); if (!panel.hidden) { input.focus(); } });
+      .then(function () { setBusy(false); refresh(); scrollDown(); if (!panel.hidden) { input.focus(); } });
   }
 
+  newChat.addEventListener('click', function () {
+    if (busy) { return; }
+    log.textContent = ''; saved = []; history = [];
+    showMessage('bot', GREETING);
+    refresh(); store(); input.focus();
+  });
   toggle.addEventListener('click', function () { if (panel.hidden) { open(); } else { close(); } });
   document.getElementById('aiClose').addEventListener('click', close);
   document.addEventListener('keydown', function (event) { if (event.key === 'Escape' && !panel.hidden) { close(); } });
@@ -172,6 +220,17 @@
   Array.prototype.forEach.call(document.querySelectorAll('.ai-chip'), function (chip) {
     chip.addEventListener('click', function () { ask(chip.textContent, false); });
   });
+
+  /* Start: the greeting, then whatever this tab was talking about before. */
+  showMessage('bot', GREETING);
+  var before = load();
+  if (before) {
+    saved = before.msgs;
+    saved.forEach(function (m) { showMessage(m.kind, m.text); });
+    history = saved.map(function (m) { return { role: m.kind === 'user' ? 'user' : 'assistant', text: m.text }; }).slice(-6);
+  }
+  refresh();
+  if (before && before.open) { open(true); } else { store(); }
 })();
 </script>
 {% endif %}
