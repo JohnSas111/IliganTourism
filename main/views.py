@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
@@ -23,7 +24,7 @@ from .models import (
     Category, Attraction, AttractionService, ServiceBooking, AttractionReview,
     Event, EventBooking,
     Hotel, Room, HotelBooking, HotelReview,
-    Contact
+    Contact, Payment
 )
 
 
@@ -473,54 +474,34 @@ def book_room(request, room_id):
     return render(request, 'main/book_room.html', ctx)
 
 # ── MY BOOKINGS ───────────────────────────────────
-@login_required
-def my_bookings(request):
-    search = request.GET.get('q', '').strip()
-
-    hotel_qs = HotelBooking.objects.filter(user=request.user).select_related('room__hotel').order_by('-created_at')
-    event_qs = EventBooking.objects.filter(user=request.user).select_related('event').order_by('-created_at')
-    service_qs = ServiceBooking.objects.filter(user=request.user).select_related('service__attraction').order_by('-created_at')
-
-    if search:
-        hotel_qs = hotel_qs.filter(room__hotel__name__icontains=search)
-        event_qs = event_qs.filter(event__name__icontains=search)
-        service_qs = service_qs.filter(service__attraction__name__icontains=search)
-
-    hotel_page   = Paginator(hotel_qs,   10).get_page(request.GET.get('hotel_page'))
-    event_page   = Paginator(event_qs,   10).get_page(request.GET.get('event_page'))
-    service_page = Paginator(service_qs, 10).get_page(request.GET.get('service_page'))
-
-    return render(request, 'main/my_bookings.html', {
-        'hotel_bookings':   hotel_page,
-        'event_bookings':   event_page,
-        'service_bookings': service_page,
-        'search':           search,
-    })
-
-
-@login_required
-def booking_detail(request, booking_type, pk):
-    if booking_type == 'hotel':
-        booking = get_object_or_404(HotelBooking, pk=pk, user=request.user)
-    elif booking_type == 'event':
-        booking = get_object_or_404(EventBooking, pk=pk, user=request.user)
-    elif booking_type == 'service':
-        booking = get_object_or_404(ServiceBooking, pk=pk, user=request.user)
-    else:
-        return redirect('my_bookings')
-    return render(request, 'main/booking_detail.html', {
-        'booking': booking,
-        'booking_type': booking_type,
-    })
-
-
 CANCEL_WINDOW_HOURS = 24
+BOOKINGS_PER_PAGE = 10
+
+BOOKING_TABS = [('upcoming', 'Upcoming'), ('past', 'Past'), ('cancelled', 'Cancelled')]
+# URL value -> booking kind. 'all' means no filter.
+BOOKING_KIND_FILTERS = [('all', 'All', None), ('hotels', 'Hotels', 'hotel'),
+                        ('events', 'Events', 'event'), ('attractions', 'Attractions', 'service')]
+KIND_LABELS = {'hotel': 'Hotel', 'event': 'Event', 'service': 'Attraction'}
+CANCEL_URL_NAMES = {'hotel': 'cancel_hotel_booking', 'event': 'cancel_event_booking',
+                    'service': 'cancel_service_booking'}
+
+
+def _booking_kind(booking):
+    if isinstance(booking, HotelBooking):
+        return 'hotel'
+    if isinstance(booking, EventBooking):
+        return 'event'
+    return 'service'
+
 
 def _is_within_cancel_window(booking):
     """Return True if booking was created within the cancellation window."""
+    return timezone.now() <= _cancel_deadline(booking)
+
+
+def _cancel_deadline(booking):
     from datetime import timedelta
-    deadline = booking.created_at + timedelta(hours=CANCEL_WINDOW_HOURS)
-    return timezone.now() <= deadline
+    return booking.created_at + timedelta(hours=CANCEL_WINDOW_HOURS)
 
 
 def _booking_start_date(booking):
@@ -532,15 +513,201 @@ def _booking_start_date(booking):
     return booking.visit_date
 
 
-def _cancel_booking(request, booking, label):
-    """Shared cancellation rules for hotel, event and service bookings."""
+def _booking_end_date(booking):
+    """The last day of the customer's visit (check-out day for hotels)."""
+    if isinstance(booking, HotelBooking):
+        return booking.check_out
+    return _booking_start_date(booking)
+
+
+def _cancel_block_reason(booking):
+    """
+    THE one place that decides whether a booking can be cancelled.
+    Returns None when cancelling is allowed, otherwise the message to show the customer.
+    Used by the My Bookings list, the details page and the cancel action itself.
+    """
     from datetime import date as date_type
     if booking.status not in ('confirmed', 'pending'):
-        messages.error(request, 'This booking cannot be cancelled.')
-    elif _booking_start_date(booking) < date_type.today():
-        messages.error(request, 'This booking date has already passed, so it can no longer be cancelled.')
-    elif not _is_within_cancel_window(booking):
-        messages.error(request, f'Cancellation window has passed. Bookings can only be cancelled within {CANCEL_WINDOW_HOURS} hours of booking.')
+        return 'This booking cannot be cancelled.'
+    if _booking_start_date(booking) < date_type.today():
+        return 'This booking date has already passed, so it can no longer be cancelled.'
+    if not _is_within_cancel_window(booking):
+        return f'Cancellation window has passed. Bookings can only be cancelled within {CANCEL_WINDOW_HOURS} hours of booking.'
+    return None
+
+
+def _format_time_left(delta):
+    """'18h 20m' or '45m' (never negative)."""
+    minutes = max(int(delta.total_seconds() // 60), 0)
+    hours, mins = divmod(minutes, 60)
+    return f'{hours}h {mins}m' if hours else f'{mins}m'
+
+
+def _booking_tab(booking):
+    from datetime import date as date_type
+    if booking.status == 'cancelled':
+        return 'cancelled'
+    if booking.status == 'completed' or _booking_end_date(booking) < date_type.today():
+        return 'past'
+    return 'upcoming'
+
+
+def _booking_row(booking):
+    """Everything a template needs to show one booking, whatever its type."""
+    kind = _booking_kind(booking)
+    if kind == 'hotel':
+        title = f'{booking.room.hotel.name} — Room {booking.room.room_number}'
+        extra = {'nights': max((booking.check_out - booking.check_in).days, 1)}
+    elif kind == 'event':
+        title = booking.event.name
+        extra = {}
+    else:
+        title = f'{booking.service.attraction.name} — {booking.service.name}'
+        extra = {}
+
+    reason = _cancel_block_reason(booking)
+    can_cancel = reason is None
+    row = {
+        'obj': booking, 'kind': kind, 'kind_label': KIND_LABELS[kind],
+        'title': title, 'reference': booking.reference_number or '',
+        'tab': _booking_tab(booking),
+        'start_date': _booking_start_date(booking), 'end_date': _booking_end_date(booking),
+        'can_cancel': can_cancel, 'cancel_block_reason': reason,
+        'cancel_url': reverse(CANCEL_URL_NAMES[kind], args=[booking.pk]) if can_cancel else '',
+        'detail_url': reverse('booking_detail', args=[kind, booking.pk]),
+        'cancel_left': '', 'cancel_deadline_ts': 0, 'cancel_soon': False,
+    }
+    row.update(extra)
+    if can_cancel:
+        left = _cancel_deadline(booking) - timezone.now()
+        row['cancel_left'] = _format_time_left(left)
+        row['cancel_deadline_ts'] = int(_cancel_deadline(booking).timestamp())
+        row['cancel_soon'] = left.total_seconds() < 2 * 3600
+    return row
+
+
+def _all_booking_rows(user):
+    """Every booking of the user, as rows, newest first."""
+    hotel = HotelBooking.objects.filter(user=user).select_related('room__hotel')
+    event = EventBooking.objects.filter(user=user).select_related('event')
+    service = ServiceBooking.objects.filter(user=user).select_related('service__attraction')
+    rows = [_booking_row(b) for b in list(hotel) + list(event) + list(service)]
+    rows.sort(key=lambda r: (r['obj'].created_at, r['obj'].pk), reverse=True)
+    return rows
+
+
+def _next_up(rows):
+    """The soonest booking that has not started yet (confirmed or pending)."""
+    from datetime import date as date_type
+    today = date_type.today()
+    coming = [r for r in rows if r['obj'].status in ('confirmed', 'pending') and r['start_date'] >= today]
+    if not coming:
+        return None
+    first = min(coming, key=lambda r: (r['start_date'], r['obj'].created_at))
+    days = (first['start_date'] - today).days
+    first['days_away'] = days
+    first['when_text'] = 'today' if days == 0 else 'tomorrow' if days == 1 else f'in {days} days'
+    return first
+
+
+@login_required
+def my_bookings(request):
+    from urllib.parse import urlencode
+    q = request.GET.get('q', '').strip()[:100]
+    tab = request.GET.get('tab', 'upcoming')
+    if tab not in dict(BOOKING_TABS):
+        tab = 'upcoming'
+    kind_key = request.GET.get('type', 'all')
+    if kind_key not in {k for k, _, _ in BOOKING_KIND_FILTERS}:
+        kind_key = 'all'
+    kind = next(k for key, _, k in BOOKING_KIND_FILTERS if key == kind_key)
+
+    all_rows = _all_booking_rows(request.user)
+
+    # Type chips and the search box apply first; the tab counts then match what the tabs will show.
+    rows = [r for r in all_rows if kind is None or r['kind'] == kind]
+    if q:
+        needle = q.lower()
+        rows = [r for r in rows if needle in f"{r['title']} {r['reference']}".lower()]
+    counts = {key: sum(1 for r in rows if r['tab'] == key) for key, _ in BOOKING_TABS}
+    shown = [r for r in rows if r['tab'] == tab]
+
+    def link(**changes):
+        params = {'tab': tab, 'type': kind_key, 'q': q}
+        params.update(changes)
+        params = {k: v for k, v in params.items() if v and not (k == 'tab' and v == 'upcoming')
+                  and not (k == 'type' and v == 'all')}
+        return '?' + urlencode(params) if params else request.path
+
+    page = Paginator(shown, BOOKINGS_PER_PAGE).get_page(request.GET.get('page'))
+    pager = None
+    if page.has_other_pages():
+        pager = {
+            'info': f'Showing {page.start_index()}–{page.end_index()} of {page.paginator.count} bookings',
+            'prev': link(page=page.previous_page_number()) if page.has_previous() else '',
+            'next': link(page=page.next_page_number()) if page.has_next() else '',
+            'numbers': [{'num': n, 'url': link(page=n), 'active': n == page.number}
+                        for n in page.paginator.page_range if abs(n - page.number) <= 2],
+        }
+    return render(request, 'main/my_bookings.html', {
+        'page_obj': page,
+        'tabs': [{'key': k, 'label': label, 'count': counts[k], 'url': link(tab=k, page=None),
+                  'active': k == tab} for k, label in BOOKING_TABS],
+        'kinds': [{'key': key, 'label': label, 'url': link(type=key, page=None),
+                   'active': key == kind_key} for key, label, _ in BOOKING_KIND_FILTERS],
+        'pager': pager,
+        'q': q, 'tab': tab, 'kind_key': kind_key,
+        'has_any': bool(all_rows),
+        'next_up': _next_up(all_rows),
+        'clear_url': link(q=None, page=None),
+    })
+
+
+@login_required
+def booking_detail(request, booking_type, pk):
+    if booking_type == 'hotel':
+        booking = get_object_or_404(HotelBooking.objects.select_related('room__hotel'), pk=pk, user=request.user)
+        payment = Payment.objects.filter(hotel_booking=booking).order_by('-pk').first()
+    elif booking_type == 'event':
+        booking = get_object_or_404(EventBooking.objects.select_related('event'), pk=pk, user=request.user)
+        payment = Payment.objects.filter(event_booking=booking).order_by('-pk').first()
+    elif booking_type == 'service':
+        booking = get_object_or_404(ServiceBooking.objects.select_related('service__attraction'), pk=pk, user=request.user)
+        payment = Payment.objects.filter(service_booking=booking).order_by('-pk').first()
+    else:
+        return redirect('my_bookings')
+
+    row = _booking_row(booking)
+    end_word = {'hotel': 'check-out', 'event': 'the event', 'service': 'your visit'}[booking_type]
+    if booking.status == 'cancelled':
+        steps = [('Booked', 'done'), ('Cancelled', 'cancelled')]
+    elif booking.status == 'completed':
+        steps = [('Confirmed', 'done'), ('Completed', 'done')]
+    else:
+        first = 'Pending' if booking.status == 'pending' else 'Confirmed'
+        steps = [(first, 'current'), (f'Completed after {end_word}', 'todo')]
+
+    if row['can_cancel']:
+        cancel_note = ''
+    elif booking.status == 'cancelled':
+        cancel_note = 'This booking has been cancelled. Refunds are reviewed and processed by our team.'
+    elif booking.status == 'completed':
+        cancel_note = 'This booking is completed, so it can no longer be cancelled.'
+    else:
+        cancel_note = row['cancel_block_reason']
+
+    return render(request, 'main/booking_detail.html', {
+        'booking': booking, 'booking_type': booking_type, 'row': row,
+        'payment': payment, 'steps': steps, 'cancel_note': cancel_note,
+        'cancel_window_hours': CANCEL_WINDOW_HOURS,
+    })
+
+
+def _cancel_booking(request, booking, label):
+    """Shared cancellation rules for hotel, event and service bookings."""
+    reason = _cancel_block_reason(booking)
+    if reason:
+        messages.error(request, reason)
     else:
         booking.status = 'cancelled'
         booking.save()

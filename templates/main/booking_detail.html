@@ -9,174 +9,96 @@
 
 {% block content %}
 
-<div class="page-header">
-  <div class="sec-tag">Your Booking</div>
-  <h1>Booking <em>Details</em></h1>
-</div>
+<section class="section bk-wrap bk-detail">
 
-<section class="section" style="max-width:800px;">
+  <a class="bk-back" href="{% url 'my_bookings' %}">&larr; Back to My Bookings</a>
 
-  {% if booking_type == 'hotel' %}
-  <div class="info-box">
-    <div class="info-row">
-      <span>Reference No.</span>
-      <strong style="font-family:monospace;color:var(--gold);letter-spacing:0.05em;">{{ booking.reference_number|default:"—" }}</strong>
+  <header class="bk-dhead">
+    <div>
+      <span class="bk-chip-type bk-ic--{{ row.kind }}">{{ row.kind_label|upper }}</span>
+      <h1 class="bk-dtitle">{{ row.title }}</h1>
+      <span class="bk-ref">{{ row.reference|default:"—" }}</span>
+      <span class="bk-muted">&middot; booked {{ booking.created_at|date:"M j, Y" }}</span>
     </div>
-    <div class="info-row">
-      <span>Booking Type</span>
-      <span class="badge badge-blue">Hotel</span>
-    </div>
-    <div class="info-row">
-      <span>Hotel</span>
-      <span>{{ booking.room.hotel.name }}</span>
-    </div>
-    <div class="info-row">
-      <span>Room</span>
-      <span>Room {{ booking.room.room_number }} — {{ booking.room.get_room_type_display }}</span>
-    </div>
-    <div class="info-row">
-      <span>Max Guests</span>
-      <span>{{ booking.room.max_guests }} person(s)</span>
-    </div>
-    <div class="info-row">
-      <span>Check-in</span>
-      <span>{{ booking.check_in|date:"F j, Y" }}{% if booking.check_in_time %} at {{ booking.check_in_time|time:"g:i A" }}{% endif %}</span>
-    </div>
-    <div class="info-row">
-      <span>Check-out</span>
-      <span>{{ booking.check_out|date:"F j, Y" }}{% if booking.check_out_time %} at {{ booking.check_out_time|time:"g:i A" }}{% endif %}</span>
-    </div>
-    <div class="info-row">
-      <span>Total Price</span>
-      <strong>PHP {{ booking.total_price }}</strong>
-    </div>
-    <div class="info-row">
-      <span>Status</span>
-      <span class="status-{{ booking.status }}">{{ booking.get_status_display }}</span>
-    </div>
-    <div class="info-row">
-      <span>Booked On</span>
-      <span>{{ booking.created_at|date:"F j, Y" }}</span>
-    </div>
-  </div>
-  {% if booking.status == 'pending' %}
-  <form method="post" action="{% url 'cancel_hotel_booking' booking.pk %}">
-    {% csrf_token %}
-    <button type="submit" class="btn-cancel-booking" onclick="return confirm('Cancel this booking?')">Cancel Booking</button>
-  </form>
-  {% endif %}
+    <span class="bk-pill bk-pill--{{ booking.status }} bk-pill--lg">{{ booking.get_status_display }}</span>
+  </header>
 
-  {% elif booking_type == 'event' %}
-  <div class="info-box">
-    <div class="info-row">
-      <span>Reference No.</span>
-      <strong style="font-family:monospace;color:var(--gold);letter-spacing:0.05em;">{{ booking.reference_number|default:"—" }}</strong>
-    </div>
-    <div class="info-row">
-      <span>Booking Type</span>
-      <span class="badge badge-gold">Event</span>
-    </div>
-    <div class="info-row">
-      <span>Event</span>
-      <span>{{ booking.event.name }}</span>
-    </div>
-    <div class="info-row">
-      <span>Date</span>
-      <span>{{ booking.event.date|date:"F j, Y" }}{% if booking.event.time %} at {{ booking.event.time|time:"g:i A" }}{% endif %}</span>
-    </div>
-    <div class="info-row">
-      <span>Location</span>
-      <span>{{ booking.event.location }}</span>
-    </div>
-    <div class="info-row">
-      <span>Tickets</span>
-      <span>{{ booking.num_tickets }}</span>
-    </div>
-    <div class="info-row">
-      <span>Price per Ticket</span>
-      <span>PHP {{ booking.event.ticket_price }}</span>
-    </div>
-    <div class="info-row">
-      <span>Total Price</span>
-      <strong>PHP {{ booking.total_price }}</strong>
-    </div>
-    <div class="info-row">
-      <span>Status</span>
-      <span class="status-{{ booking.status }}">{{ booking.get_status_display }}</span>
-    </div>
-    <div class="info-row">
-      <span>Booked On</span>
-      <span>{{ booking.created_at|date:"F j, Y" }}</span>
-    </div>
-  </div>
-  {% if booking.status == 'pending' %}
-  <form method="post" action="{% url 'cancel_event_booking' booking.pk %}">
-    {% csrf_token %}
-    <button type="submit" class="btn-cancel-booking" onclick="return confirm('Cancel this booking?')">Cancel Booking</button>
-  </form>
-  {% endif %}
+  <div class="bk-dgrid">
+    <div class="bk-dcol bk-dcol--main">
 
-  {% elif booking_type == 'service' %}
-  <div class="info-box">
-    <div class="info-row">
-      <span>Reference No.</span>
-      <strong style="font-family:monospace;color:var(--gold);letter-spacing:0.05em;">{{ booking.reference_number|default:"—" }}</strong>
-    </div>
-    <div class="info-row">
-      <span>Booking Type</span>
-      <span class="badge badge-green">Attraction Service</span>
-    </div>
-    <div class="info-row">
-      <span>Attraction</span>
-      <span>{{ booking.service.attraction.name }}</span>
-    </div>
-    <div class="info-row">
-      <span>Service</span>
-      <span>{{ booking.service.name }}</span>
-    </div>
-    <div class="info-row">
-      <span>Service Type</span>
-      <span>{{ booking.service.get_service_type_display }}</span>
-    </div>
-    <div class="info-row">
-      <span>Visit Date</span>
-      <span>{{ booking.visit_date|date:"F j, Y" }}</span>
-    </div>
-    <div class="info-row">
-      <span>Guests</span>
-      <span>{{ booking.num_guests }}</span>
-    </div>
-    {% if booking.notes %}
-    <div class="info-row">
-      <span>Special Requests</span>
-      <span>{{ booking.notes }}</span>
-    </div>
-    {% endif %}
-    <div class="info-row">
-      <span>Total Price</span>
-      <strong>PHP {{ booking.total_price }}</strong>
-    </div>
-    <div class="info-row">
-      <span>Status</span>
-      <span class="status-{{ booking.status }}">{{ booking.get_status_display }}</span>
-    </div>
-    <div class="info-row">
-      <span>Booked On</span>
-      <span>{{ booking.created_at|date:"F j, Y" }}</span>
-    </div>
-  </div>
-  {% if booking.status == 'pending' %}
-  <form method="post" action="{% url 'cancel_service_booking' booking.pk %}">
-    {% csrf_token %}
-    <button type="submit" class="btn-cancel-booking" onclick="return confirm('Cancel this booking?')">Cancel Booking</button>
-  </form>
-  {% endif %}
-  {% endif %}
+      <section class="bk-box">
+        <h2 class="bk-h">{% if booking_type == 'hotel' %}Your stay{% elif booking_type == 'event' %}Your event{% else %}Your visit{% endif %}</h2>
+        <dl class="bk-facts">
+          {% if booking_type == 'hotel' %}
+            <div><dt>Check-in</dt><dd>{{ booking.check_in|date:"M j, Y" }}{% if booking.check_in_time %} &middot; {{ booking.check_in_time|time:"g:i A" }}{% endif %}</dd></div>
+            <div><dt>Check-out</dt><dd>{{ booking.check_out|date:"M j, Y" }}{% if booking.check_out_time %} &middot; {{ booking.check_out_time|time:"g:i A" }}{% endif %}</dd></div>
+            <div><dt>Room</dt><dd>Room {{ booking.room.room_number }} &middot; {{ booking.room.get_room_type_display }}</dd></div>
+            <div><dt>Max guests</dt><dd>{{ booking.room.max_guests }} person{{ booking.room.max_guests|pluralize }}</dd></div>
+            <div><dt>Length of stay</dt><dd>{{ row.nights }} night{{ row.nights|pluralize }}</dd></div>
+            <div><dt>Hotel</dt><dd>{{ booking.room.hotel.name }}</dd></div>
+          {% elif booking_type == 'event' %}
+            <div><dt>Date</dt><dd>{{ booking.event.date|date:"M j, Y" }}{% if booking.event.time %} &middot; {{ booking.event.time|time:"g:i A" }}{% endif %}</dd></div>
+            <div><dt>Location</dt><dd>{{ booking.event.location }}</dd></div>
+            <div><dt>Tickets</dt><dd>{{ booking.num_tickets }}</dd></div>
+            <div><dt>Event</dt><dd>{{ booking.event.name }}</dd></div>
+          {% else %}
+            <div><dt>Visit date</dt><dd>{{ booking.visit_date|date:"M j, Y" }}</dd></div>
+            <div><dt>Guests</dt><dd>{{ booking.num_guests }}</dd></div>
+            <div><dt>Attraction</dt><dd>{{ booking.service.attraction.name }}</dd></div>
+            <div><dt>Service</dt><dd>{{ booking.service.name }} &middot; {{ booking.service.get_service_type_display }}</dd></div>
+            {% if booking.notes %}<div class="bk-wide"><dt>Special requests</dt><dd>{{ booking.notes }}</dd></div>{% endif %}
+          {% endif %}
+        </dl>
+      </section>
 
-  <div style="margin-top:1.5rem;">
-    <a href="{% url 'my_bookings' %}" class="btn-ghost">← Back to My Bookings</a>
+      <section class="bk-box">
+        <h2 class="bk-h">Payment</h2>
+        <div class="bk-row bk-row--total"><span>{% if payment and payment.status == 'paid' %}Total paid{% else %}Total{% endif %}</span><strong>&#8369;{{ booking.total_price|floatformat:"2g" }}</strong></div>
+        {% if payment %}
+          <div class="bk-row"><span class="bk-muted">Payment status</span><span>{{ payment.get_status_display }}{% if payment.status == 'paid' %} online{% endif %}</span></div>
+          <div class="bk-row"><span class="bk-muted">Payment reference</span><span class="bk-ref">PAY-{{ payment.pk }}</span></div>
+        {% else %}
+          <p class="bk-muted bk-small">No online payment record is linked to this booking.</p>
+        {% endif %}
+      </section>
+    </div>
+
+    <div class="bk-dcol bk-dcol--side">
+
+      <section class="bk-box">
+        <h2 class="bk-h">Status</h2>
+        <ol class="bk-steps">
+          {% for label, state in steps %}
+            <li class="bk-step bk-step--{{ state }}"><span class="bk-dot" aria-hidden="true"></span>{{ label }}</li>
+          {% endfor %}
+        </ol>
+      </section>
+
+      <section class="bk-box">
+        <h2 class="bk-h">Need to cancel?</h2>
+        {% if row.can_cancel %}
+          <div class="bk-cancel bk-cancel--box" data-cancel-deadline="{{ row.cancel_deadline_ts }}">
+            <p class="bk-muted bk-small">You can cancel for <strong class="js-time-left bk-soon-text{% if row.cancel_soon %} bk-soon{% endif %}">{{ row.cancel_left }}</strong> more. Refunds are reviewed and processed by our team.</p>
+            <button type="button" class="bk-btn bk-btn--danger bk-btn--block"
+                    data-cancel-url="{{ row.cancel_url }}" data-name="{{ row.title }}">Cancel booking</button>
+          </div>
+          <p class="bk-muted bk-small" data-cancel-expired hidden>The cancellation window has just closed. If you need a change, please contact us.</p>
+        {% else %}
+          <p class="bk-muted bk-small">{{ cancel_note }}</p>
+        {% endif %}
+      </section>
+
+      <section class="bk-box">
+        <h2 class="bk-h">Need help?</h2>
+        <p class="bk-muted bk-small">Contact us and quote <span class="bk-ref">{{ row.reference|default:"your booking" }}</span>.</p>
+        <a class="bk-btn bk-btn--primary bk-btn--block" href="{% url 'contact' %}">Contact us</a>
+      </section>
+
+    </div>
   </div>
 
 </section>
+
+{% include 'main/_cancel_modal.html' %}
 
 {% endblock %}

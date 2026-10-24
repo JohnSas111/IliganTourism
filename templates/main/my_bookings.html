@@ -12,234 +12,125 @@
 <div class="page-header">
   <div class="sec-tag">Your Account</div>
   <h1>My <em>Bookings</em></h1>
-  <p>View and manage all your reservations in one place.</p>
+  <p>Everything you have booked, in one list.</p>
 </div>
 
-<section class="section">
+<section class="section bk-wrap">
 
-  <form method="get" class="bookings-search-bar" action="">
-    <input type="text" name="q" value="{{ search }}" placeholder="Search by hotel, event or attraction name…">
-    <button type="submit">Search</button>
-    {% if search %}
-      <a class="search-clear" href="{% url 'my_bookings' %}">✕ Clear</a>
-    {% endif %}
-  </form>
-
-  {% if search %}
-    <p style="margin-bottom:1.5rem;color:rgba(255,255,255,0.4);">
-      Results for <strong style="color:rgba(255,255,255,0.7);">"{{ search }}"</strong>
-    </p>
+  {% if next_up %}
+  <a class="bk-nextup" href="{{ next_up.detail_url }}">
+    <span><strong>Next up:</strong>
+      {{ next_up.title }} &middot;
+      {% if next_up.kind == 'hotel' %}check-in{% elif next_up.kind == 'event' %}event on{% else %}visit on{% endif %}
+      {{ next_up.start_date|date:"M j, Y" }}</span>
+    <span class="bk-muted">{{ next_up.when_text }}</span>
+  </a>
   {% endif %}
 
-  <!-- HOTEL BOOKINGS -->
-  <div class="bookings-section">
-    <h2>Hotel Bookings</h2>
-    {% for b in hotel_bookings %}
-    <div class="booking-item">
-      <div>
-        <div class="booking-name">{{ b.room.hotel.name }} — Room {{ b.room.room_number }}</div>
-        <div class="booking-detail">
-          {{ b.room.get_room_type_display }} ·
-          {{ b.check_in|date:"M j, Y" }} — {{ b.check_out|date:"M j, Y" }}
-        </div>
-        <div class="booking-detail">Booked {{ b.created_at|date:"M j, Y g:i A" }}</div>
-      </div>
-      <div class="booking-right">
-        <div class="booking-price">PHP {{ b.total_price }}</div>
-        <span class="status-{{ b.status }}">{{ b.get_status_display }}</span>
-        <div class="booking-actions">
-          <a href="{% url 'booking_detail' 'hotel' b.pk %}" class="btn-view-detail">View Details</a>
-          {% if b.status == 'confirmed' or b.status == 'completed' %}
-            <button type="button"
-              class="btn-cancel-booking"
-              data-cancel-url="{% url 'cancel_hotel_booking' b.pk %}"
-              data-created="{{ b.created_at|date:'c' }}"
-              data-name="{{ b.room.hotel.name }} — Room {{ b.room.room_number }}"
-              onclick="openCancelModal(this)">
-              Cancel Booking
-            </button>
-            <div class="cancel-window-info" data-created="{{ b.created_at|date:'c' }}"></div>
-          {% elif b.status == 'cancelled' %}
-            <span style="font-size:.75rem;color:rgba(224,92,92,0.6);">Cancelled</span>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-    {% empty %}
-    <p class="no-bookings-msg">
-      {% if search %}No hotel bookings match your search.{% else %}No hotel bookings yet. <a href="{% url 'hotels' %}">Browse hotels</a>{% endif %}
-    </p>
-    {% endfor %}
-    {% with page_obj=hotel_bookings page_param="hotel_page" %}{% include "includes/pagination.html" %}{% endwith %}
+  {% if has_any %}
+  <div class="bk-toolbar">
+    <nav class="bk-tabs" aria-label="Booking groups">
+      {% for t in tabs %}
+        <a class="bk-tab{% if t.active %} on{% endif %}" href="{{ t.url }}"{% if t.active %} aria-current="page"{% endif %}>{{ t.label }} ({{ t.count }})</a>
+      {% endfor %}
+    </nav>
+    <form method="get" class="bk-search" action="{% url 'my_bookings' %}" role="search">
+      <input type="hidden" name="tab" value="{{ tab }}">
+      <input type="hidden" name="type" value="{{ kind_key }}">
+      <label for="bkSearch" class="bk-sr">Search bookings</label>
+      <input id="bkSearch" type="search" name="q" value="{{ q }}" maxlength="100" placeholder="Search by name or reference">
+      <button type="submit">Search</button>
+      {% if q %}<a class="bk-clear" href="{{ clear_url }}">Clear</a>{% endif %}
+    </form>
   </div>
 
-  <!-- EVENT BOOKINGS -->
-  <div class="bookings-section">
-    <h2>Event Bookings</h2>
-    {% for b in event_bookings %}
-    <div class="booking-item">
-      <div>
-        <div class="booking-name">{{ b.event.name }}</div>
-        <div class="booking-detail">
-          {{ b.num_tickets }} ticket(s) ·
-          {{ b.event.date|date:"F j, Y" }}{% if b.event.time %} at {{ b.event.time|time:"g:i A" }}{% endif %}
-        </div>
-        <div class="booking-detail">{{ b.event.location }}</div>
+  <div class="bk-chips" role="group" aria-label="Booking type">
+    {% for k in kinds %}
+      <a class="bk-chip{% if k.active %} on{% endif %}" href="{{ k.url }}"{% if k.active %} aria-current="true"{% endif %}>{{ k.label }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="bk-list">
+  {% for r in page_obj %}
+    {% with b=r.obj %}
+    <article class="bk-card">
+      <div class="bk-ic bk-ic--{{ r.kind }}" role="img" aria-label="{{ r.kind_label }} booking">
+        {% if r.kind == 'hotel' %}
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 18v-7a2 2 0 012-2h14a2 2 0 012 2v7M3 15h18M7 9V6h10v3"/></svg>
+        {% elif r.kind == 'event' %}
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 7h18v3a2 2 0 000 4v3H3v-3a2 2 0 000-4z"/></svg>
+        {% else %}
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        {% endif %}
       </div>
-      <div class="booking-right">
-        <div class="booking-price">PHP {{ b.total_price }}</div>
-        <span class="status-{{ b.status }}">{{ b.get_status_display }}</span>
-        <div class="booking-actions">
-          <a href="{% url 'booking_detail' 'event' b.pk %}" class="btn-view-detail">View Details</a>
-          {% if b.status == 'confirmed' or b.status == 'completed' %}
-            <button type="button"
-              class="btn-cancel-booking"
-              data-cancel-url="{% url 'cancel_event_booking' b.pk %}"
-              data-created="{{ b.created_at|date:'c' }}"
-              data-name="{{ b.event.name }}"
-              onclick="openCancelModal(this)">
-              Cancel Booking
-            </button>
-            <div class="cancel-window-info" data-created="{{ b.created_at|date:'c' }}"></div>
-          {% elif b.status == 'cancelled' %}
-            <span style="font-size:.75rem;color:rgba(224,92,92,0.6);">Cancelled</span>
+
+      <div class="bk-main">
+        <h2 class="bk-title">{{ r.title }}</h2>
+        <div class="bk-meta">
+          {% if r.kind == 'hotel' %}
+            {{ b.room.get_room_type_display }} room &middot;
+            {{ b.check_in|date:"M j, Y" }} &ndash; {{ b.check_out|date:"M j, Y" }} &middot;
+            {{ r.nights }} night{{ r.nights|pluralize }}
+          {% elif r.kind == 'event' %}
+            {{ b.num_tickets }} ticket{{ b.num_tickets|pluralize }} &middot;
+            {{ b.event.date|date:"M j, Y" }}{% if b.event.time %}, {{ b.event.time|time:"g:i A" }}{% endif %} &middot;
+            {{ b.event.location }}
+          {% else %}
+            {{ b.service.get_service_type_display }} &middot;
+            {{ b.num_guests }} guest{{ b.num_guests|pluralize }} &middot;
+            {{ b.visit_date|date:"M j, Y" }}
+          {% endif %}
+          <br><span class="bk-ref">{{ r.reference|default:"—" }}</span> &middot; booked {{ b.created_at|date:"M j, Y" }}
+        </div>
+        <div class="bk-actions">
+          <a class="bk-btn bk-btn--primary" href="{{ r.detail_url }}">View details</a>
+          {% if r.can_cancel %}
+          <span class="bk-cancel" data-cancel-deadline="{{ r.cancel_deadline_ts }}">
+            <button type="button" class="bk-btn bk-btn--danger"
+                    data-cancel-url="{{ r.cancel_url }}" data-name="{{ r.title }}">Cancel booking</button>
+            <span class="bk-left"><span class="js-time-left{% if r.cancel_soon %} bk-soon{% endif %}">{{ r.cancel_left }}</span> left to cancel</span>
+          </span>
           {% endif %}
         </div>
       </div>
+
+      <div class="bk-side">
+        <div class="bk-price">&#8369;{{ b.total_price|floatformat:"2g" }}</div>
+        <span class="bk-pill bk-pill--{{ b.status }}">{{ b.get_status_display }}</span>
+      </div>
+    </article>
+    {% endwith %}
+  {% empty %}
+    <div class="bk-empty">
+      {% if not has_any %}
+        <p>You have no bookings yet.</p>
+        <p><a href="{% url 'hotels' %}">Browse hotels</a> &middot; <a href="{% url 'events' %}">Browse events</a> &middot; <a href="{% url 'attractions' %}">Browse attractions</a></p>
+      {% elif q %}
+        <p>No {{ tab }} bookings match &ldquo;{{ q }}&rdquo;.</p>
+        <p><a href="{{ clear_url }}">Clear the search</a></p>
+      {% else %}
+        <p>No {{ tab }} bookings here.</p>
+      {% endif %}
     </div>
-    {% empty %}
-    <p class="no-bookings-msg">
-      {% if search %}No event bookings match your search.{% else %}No event bookings yet. <a href="{% url 'events' %}">Browse events</a>{% endif %}
-    </p>
-    {% endfor %}
-    {% with page_obj=event_bookings page_param="event_page" %}{% include "includes/pagination.html" %}{% endwith %}
+  {% endfor %}
   </div>
 
-  <!-- SERVICE BOOKINGS -->
-  <div class="bookings-section">
-    <h2>Attraction Service Bookings</h2>
-    {% for b in service_bookings %}
-    <div class="booking-item">
-      <div>
-        <div class="booking-name">{{ b.service.attraction.name }} — {{ b.service.name }}</div>
-        <div class="booking-detail">
-          {{ b.service.get_service_type_display }} ·
-          {{ b.num_guests }} guest(s) · {{ b.visit_date|date:"F j, Y" }}
-        </div>
-        <div class="booking-detail">Booked {{ b.created_at|date:"M j, Y g:i A" }}</div>
-      </div>
-      <div class="booking-right">
-        <div class="booking-price">PHP {{ b.total_price }}</div>
-        <span class="status-{{ b.status }}">{{ b.get_status_display }}</span>
-        <div class="booking-actions">
-          <a href="{% url 'booking_detail' 'service' b.pk %}" class="btn-view-detail">View Details</a>
-          {% if b.status == 'confirmed' or b.status == 'completed' %}
-            <button type="button"
-              class="btn-cancel-booking"
-              data-cancel-url="{% url 'cancel_service_booking' b.pk %}"
-              data-created="{{ b.created_at|date:'c' }}"
-              data-name="{{ b.service.attraction.name }} — {{ b.service.name }}"
-              onclick="openCancelModal(this)">
-              Cancel Booking
-            </button>
-            <div class="cancel-window-info" data-created="{{ b.created_at|date:'c' }}"></div>
-          {% elif b.status == 'cancelled' %}
-            <span style="font-size:.75rem;color:rgba(224,92,92,0.6);">Cancelled</span>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-    {% empty %}
-    <p class="no-bookings-msg">
-      {% if search %}No service bookings match your search.{% else %}No service bookings yet. <a href="{% url 'attractions' %}">Browse attractions</a>{% endif %}
-    </p>
-    {% endfor %}
-    {% with page_obj=service_bookings page_param="service_page" %}{% include "includes/pagination.html" %}{% endwith %}
-  </div>
+  {% if pager %}
+  <nav class="bk-pager" aria-label="Pages">
+    <div class="bk-muted">{{ pager.info }}</div>
+    <ul>
+      {% if pager.prev %}<li><a class="bk-page" href="{{ pager.prev }}" aria-label="Previous page">&lsaquo;</a></li>{% endif %}
+      {% for n in pager.numbers %}
+        <li>{% if n.active %}<span class="bk-page on" aria-current="page">{{ n.num }}</span>{% else %}<a class="bk-page" href="{{ n.url }}">{{ n.num }}</a>{% endif %}</li>
+      {% endfor %}
+      {% if pager.next %}<li><a class="bk-page" href="{{ pager.next }}" aria-label="Next page">&rsaquo;</a></li>{% endif %}
+    </ul>
+  </nav>
+  {% endif %}
 
 </section>
 
-<!-- Confirm Cancel Modal -->
-<div class="cancel-modal-overlay" id="cancelModal">
-  <div class="cancel-modal">
-    <h3>Cancel Booking?</h3>
-    <p id="cancelModalMsg">
-      Are you sure you want to cancel <strong id="cancelBookingName"></strong>?<br>
-    </p>
-    <div class="cancel-modal-actions">
-      <button class="btn-keep-booking" onclick="closeCancelModal()">Keep Booking</button>
-      <form id="cancelForm" method="post" action="" style="display:inline;">
-        {% csrf_token %}
-        <button type="submit" class="btn-confirm-cancel">Yes, Cancel</button>
-      </form>
-    </div>
-  </div>
-</div>
-
-<script>
-const CANCEL_HOURS = 24;
-
-function getRemainingTime(createdIso) {
-  const created = new Date(createdIso);
-  const deadline = new Date(created.getTime() + CANCEL_HOURS * 60 * 60 * 1000);
-  const now = new Date();
-  const diffMs = deadline - now;
-  return diffMs;
-}
-
-function formatRemaining(ms) {
-  if (ms <= 0) return null;
-  const totalMins = Math.floor(ms / 60000);
-  const hours = Math.floor(totalMins / 60);
-  const mins = totalMins % 60;
-  if (hours > 0) return `${hours}h ${mins}m left to cancel`;
-  return `${mins}m left to cancel`;
-}
-
-function updateCancelButtons() {
-  // Update info labels
-  document.querySelectorAll('.cancel-window-info[data-created]').forEach(el => {
-    const ms = getRemainingTime(el.dataset.created);
-    const label = formatRemaining(ms);
-    if (label) {
-      el.textContent = label;
-      el.classList.toggle('expiring-soon', ms < 2 * 60 * 60 * 1000); // < 2h
-    } else {
-      el.textContent = 'Cancellation window expired';
-    }
-  });
-
-  // Disable buttons whose window has passed
-  document.querySelectorAll('.btn-cancel-booking[data-created]').forEach(btn => {
-    const ms = getRemainingTime(btn.dataset.created);
-    if (ms <= 0) {
-      btn.disabled = true;
-      btn.style.opacity = '0.4';
-      btn.style.cursor = 'not-allowed';
-      btn.title = 'Cancellation window has passed';
-    }
-  });
-}
-
-function openCancelModal(btn) {
-  const ms = getRemainingTime(btn.dataset.created);
-  if (ms <= 0) return; // shouldn't happen but guard anyway
-  document.getElementById('cancelBookingName').textContent = btn.dataset.name;
-  document.getElementById('cancelForm').action = btn.dataset.cancelUrl;
-  document.getElementById('cancelModal').classList.add('open');
-}
-
-function closeCancelModal() {
-  document.getElementById('cancelModal').classList.remove('open');
-}
-
-document.getElementById('cancelModal').addEventListener('click', function(e) {
-  if (e.target === this) closeCancelModal();
-});
-
-// Run on load and update every minute
-updateCancelButtons();
-setInterval(updateCancelButtons, 60000);
-</script>
+{% include 'main/_cancel_modal.html' %}
 
 {% endblock %}

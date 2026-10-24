@@ -1,0 +1,78 @@
+{# Shared by My Bookings and Booking Details: the confirm-cancel popup and the cancel-time countdown. #}
+<div class="cancel-modal-overlay" id="cancelModal" role="dialog" aria-modal="true" aria-labelledby="cancelModalTitle">
+  <div class="cancel-modal">
+    <h3 id="cancelModalTitle">Cancel this booking?</h3>
+    <p>
+      Are you sure you want to cancel <strong id="cancelBookingName"></strong>?<br>
+      Refunds are reviewed and processed by our team after you cancel.
+    </p>
+    <div class="cancel-modal-actions">
+      <button type="button" class="btn-keep-booking" id="cancelKeepBtn">Keep booking</button>
+      <form id="cancelForm" method="post" action="">
+        {% csrf_token %}
+        <button type="submit" class="btn-confirm-cancel">Yes, cancel</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var modal = document.getElementById('cancelModal');
+  if (!modal) { return; }
+  var nameEl = document.getElementById('cancelBookingName');
+  var form = document.getElementById('cancelForm');
+  var keepBtn = document.getElementById('cancelKeepBtn');
+  var opener = null;
+
+  function openModal(btn) {
+    opener = btn;
+    nameEl.textContent = btn.getAttribute('data-name') || 'this booking';
+    form.setAttribute('action', btn.getAttribute('data-cancel-url'));
+    modal.classList.add('open');
+    keepBtn.focus();
+  }
+  function closeModal() {
+    modal.classList.remove('open');
+    if (opener) { opener.focus(); }
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-cancel-url]'), function (btn) {
+    btn.addEventListener('click', function () { openModal(btn); });
+  });
+  keepBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', function (e) { if (e.target === modal) { closeModal(); } });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && modal.classList.contains('open')) { closeModal(); }
+  });
+
+  function formatLeft(seconds) {
+    var minutes = Math.max(Math.floor(seconds / 60), 0);
+    var h = Math.floor(minutes / 60), m = minutes % 60;
+    return (h ? h + 'h ' : '') + m + 'm';
+  }
+
+  // Every minute: refresh the "time left" text, and HIDE the cancel area once the window has closed
+  // (the server checks the same rule again, so this is only about not showing a button that would fail).
+  function tick() {
+    var now = Date.now() / 1000;
+    Array.prototype.forEach.call(document.querySelectorAll('[data-cancel-deadline]'), function (area) {
+      var left = Number(area.getAttribute('data-cancel-deadline')) - now;
+      if (left <= 0) {
+        area.hidden = true;
+        var note = document.querySelector('[data-cancel-expired]');
+        if (note) { note.hidden = false; }
+        if (modal.classList.contains('open')) { modal.classList.remove('open'); }
+        return;
+      }
+      var label = area.querySelector('.js-time-left');
+      if (label) {
+        label.textContent = formatLeft(left);
+        label.classList.toggle('bk-soon', left < 2 * 3600);
+      }
+    });
+  }
+  tick();
+  setInterval(tick, 60000);
+})();
+</script>
