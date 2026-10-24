@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Account Settings — Iligan Tourism{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/account.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="sec-tag">Your Account</div>
+  <h1>Account <em>Settings</em></h1>
+  <p>Keep your details up to date so you receive your booking emails.</p>
+</div>
+
+<section class="section ac-wrap">
+  <div class="ac-grid">
+
+    <section class="ac-card" aria-labelledby="acProfileTitle">
+      <h2 id="acProfileTitle" class="ac-title">Profile</h2>
+      <p class="ac-sub">Your name and the email address we send confirmations to.</p>
+
+      {% if profile_form.errors %}<div class="ac-alert" role="alert">Please fix the problems below.</div>{% endif %}
+
+      <form method="post" action="{% url 'account_settings' %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="profile">
+
+        <div class="ac-row">
+          {% for field in profile_form %}{% if field.name != 'email' %}
+          <div class="ac-field">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% for e in field.errors %}<p class="ac-error">{{ e }}</p>{% endfor %}
+          </div>
+          {% endif %}{% endfor %}
+        </div>
+
+        <div class="ac-field">
+          <label for="{{ profile_form.email.id_for_label }}">{{ profile_form.email.label }}</label>
+          {{ profile_form.email }}
+          {% for e in profile_form.email.errors %}<p class="ac-error">{{ e }}</p>{% endfor %}
+          <p class="ac-hint">Booking and cancellation emails are sent here.</p>
+        </div>
+
+        <div class="ac-field">
+          <label for="acUsername">Username</label>
+          <input id="acUsername" type="text" value="{{ user.username }}" readonly class="ac-readonly">
+          <p class="ac-hint">Your username can’t be changed.</p>
+        </div>
+
+        <button type="submit" class="ac-btn">Save changes</button>
+      </form>
+    </section>
+
+    <section class="ac-card" aria-labelledby="acPasswordTitle">
+      <h2 id="acPasswordTitle" class="ac-title">Change password</h2>
+      <p class="ac-sub">You will stay logged in after changing it.</p>
+
+      {% if password_form.errors %}<div class="ac-alert" role="alert">Please fix the problems below.</div>{% endif %}
+
+      <form method="post" action="{% url 'account_settings' %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="password">
+
+        {% for field in password_form %}
+        <div class="ac-field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for e in field.errors %}<p class="ac-error">{{ e }}</p>{% endfor %}
+          {% if field.name == 'new_password1' %}<div class="ac-rules">{{ field.help_text|safe }}</div>{% endif %}
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="ac-btn">Update password</button>
+      </form>
+    </section>
+
+  </div>
+</section>
+
+{% endblock %}

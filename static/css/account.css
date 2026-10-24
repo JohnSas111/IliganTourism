@@ -1,0 +1,72 @@
+/* ============================================================
+   account.css  --  the Account Settings page (account_settings.html)
+   Every class starts with "ac-" so it can never clash with base.css.
+   ============================================================ */
+
+.ac-grid { display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-start; }
+
+.ac-card {
+    flex: 1 1 420px;
+    min-width: 0;
+    background: #143626;
+    border: 1px solid #24503a;
+    border-radius: 14px;
+    padding: 1.75rem;
+}
+.ac-title { font-family: 'Cormorant Garamond', serif; font-size: 1.75rem; font-weight: 700; margin: 0 0 0.25rem; }
+.ac-sub { margin: 0 0 1.25rem; color: #a9bfb1; font-size: 0.9rem; }
+
+.ac-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+.ac-row .ac-field { flex: 1 1 180px; }
+.ac-field { margin-bottom: 1rem; }
+.ac-field label { display: block; font-size: 0.82rem; color: #a9bfb1; margin-bottom: 6px; }
+
+.ac-field input[type="text"],
+.ac-field input[type="email"],
+.ac-field input[type="password"] {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 46px;
+    background: #0e2a1f;
+    border: 1px solid #2d6e4e;
+    border-radius: 8px;
+    color: #fff;
+    padding: 0 14px;
+    font: 0.95rem 'DM Sans', sans-serif;
+}
+.ac-field input[aria-invalid="true"] { border-color: #e8a0a0; }
+.ac-field input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.ac-field input.ac-readonly { background: #102f22; border-color: #24503a; color: #a9bfb1; }
+
+.ac-hint { margin: 6px 0 0; color: #a9bfb1; font-size: 0.82rem; }
+.ac-error { margin: 6px 0 0; color: #f0a8a8; font-size: 0.85rem; }
+.ac-alert {
+    background: #4a2a2a;
+    color: #f4c4c4;
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+/* Django prints the password rules as a list */
+.ac-rules ul { margin: 8px 0 0; padding-left: 1.1rem; color: #a9bfb1; font-size: 0.82rem; line-height: 1.7; }
+
+.ac-btn {
+    min-height: 46px;
+    padding: 0 1.5rem;
+    margin-top: 0.5rem;
+    background: var(--gold);
+    color: var(--forest);
+    border: 0;
+    border-radius: 8px;
+    font: 600 0.95rem 'DM Sans', sans-serif;
+    cursor: pointer;
+}
+.ac-btn:hover { filter: brightness(1.08); }
+.ac-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+@media (max-width: 640px) {
+    .ac-card { padding: 1.25rem; }
+    .ac-btn { width: 100%; }
+}

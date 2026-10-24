@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from django.contrib.auth import login
+from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import PasswordChangeForm, UserCreationForm
 from django.contrib.auth.models import User
 from django import forms
 from django.contrib import messages
@@ -757,6 +757,66 @@ def register(request):
     else:
         form = RegisterForm()
     return render(request, 'registration/register.html', {'form': form})
+
+
+# ── ACCOUNT SETTINGS ──────────────────────────────
+class ProfileForm(forms.ModelForm):
+    """Name and email of the logged-in customer. The username is never editable here."""
+    email = forms.EmailField(required=True, max_length=254, label='Email address')
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email']
+        labels = {'first_name': 'First name', 'last_name': 'Last name'}
+
+    def clean_email(self):
+        email = self.cleaned_data['email'].strip()
+        # Only check for duplicates when the address is really being changed, so an account
+        # whose old address is shared with another account can still save its other details.
+        if email.lower() != (self.initial.get('email') or '').lower():
+            if User.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).exists():
+                raise forms.ValidationError('This email address is already used by another account.')
+        return email
+
+
+class AccountPasswordForm(PasswordChangeForm):
+    """Django's own password change (checks the current password and the password rules)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['old_password'].label = 'Current password'
+        self.fields['new_password1'].label = 'New password'
+        self.fields['new_password2'].label = 'Confirm new password'
+
+
+@login_required
+@never_cache
+def account_settings(request):
+    # The profile form works on a fresh copy of the user, so a rejected form can never
+    # leave half-changed values on the logged-in user object.
+    def fresh_user():
+        return User.objects.get(pk=request.user.pk)
+
+    profile_form = ProfileForm(instance=fresh_user())
+    password_form = AccountPasswordForm(request.user)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'profile':
+            profile_form = ProfileForm(request.POST, instance=fresh_user())
+            if profile_form.is_valid():
+                profile_form.save()
+                messages.success(request, 'Your details have been saved.')
+                return redirect('account_settings')
+        elif action == 'password':
+            password_form = AccountPasswordForm(request.user, request.POST)
+            if password_form.is_valid():
+                user = password_form.save()
+                update_session_auth_hash(request, user)    # stay logged in
+                messages.success(request, 'Your password has been changed.')
+                return redirect('account_settings')
+    return render(request, 'main/account_settings.html', {
+        'profile_form': profile_form, 'password_form': password_form,
+    })
 
 
 # ── CONTACT ───────────────────────────────────────
@@ -1858,4 +1918,4 @@ def staff_booking_detail(request, booking_type, pk):
         'active':       'bookings',
         'booking':      booking,
         'booking_type': booking_type,
-    })
+    })
